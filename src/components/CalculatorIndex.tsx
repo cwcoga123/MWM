@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   ChevronDown,
@@ -7,19 +7,81 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { calculators, categories, type CalculatorItem } from '../data/calculators'
+import { AffordabilityCalculator } from './AffordabilityCalculator'
+import { AmortizationCalculator } from './AmortizationCalculator'
+import { CashOutRefinanceCalculator } from './CashOutRefinanceCalculator'
+import { LoanComparisonCalculator } from './LoanComparisonCalculator'
+import { MortgageCalculator } from './MortgageCalculator'
+import { MortgageRatesCalculator } from './MortgageRatesCalculator'
+import { RentVsBuyCalculator } from './RentVsBuyCalculator'
+import { BuyerClosingCostsCalculator } from './BuyerClosingCostsCalculator'
+import { SellerProceedsCalculator } from './SellerProceedsCalculator'
+import { DownPaymentPlannerCalculator } from './DownPaymentPlannerCalculator'
+import { HomeEquityCalculator } from './HomeEquityCalculator'
+import { InvestmentPropertyCalculator } from './InvestmentPropertyCalculator'
+import { RefinanceBreakEvenCalculator } from './RefinanceBreakEvenCalculator'
 
-function CalculatorRow({ calculator }: { calculator: CalculatorItem }) {
+type ActiveCalculator =
+  | 'mortgage-calculator'
+  | 'cash-out-refinance'
+  | 'amortization-schedule'
+  | 'affordability'
+  | 'loan-comparison'
+  | 'mortgage-rates'
+  | 'rent-vs-buy'
+  | 'seller-net-proceeds'
+  | 'buyer-closing-costs'
+  | 'down-payment'
+  | 'home-equity'
+  | 'investment-property'
+  | 'refinance-break-even'
+  | null
+
+const OPENABLE_CALCULATORS: Exclude<ActiveCalculator, null>[] = [
+  'mortgage-calculator',
+  'cash-out-refinance',
+  'amortization-schedule',
+  'affordability',
+  'loan-comparison',
+  'mortgage-rates',
+  'rent-vs-buy',
+  'seller-net-proceeds',
+  'buyer-closing-costs',
+  'down-payment',
+  'home-equity',
+  'investment-property',
+  'refinance-break-even',
+]
+
+function calculatorFromHash(): ActiveCalculator {
+  const calculatorId = window.location.hash.slice(1)
+  return (OPENABLE_CALCULATORS as string[]).includes(calculatorId)
+    ? (calculatorId as ActiveCalculator)
+    : null
+}
+
+function CalculatorRow({
+  calculator,
+  onOpen,
+}: {
+  calculator: CalculatorItem
+  onOpen: (calculatorId: string) => void
+}) {
   const Icon = calculator.icon
 
   return (
-    <a className="calculator-row" href={`#${calculator.id}`}>
+    <a
+      className="calculator-row"
+      href={`#${calculator.id}`}
+      onClick={() => onOpen(calculator.id)}
+    >
       <span className="calculator-row__icon"><Icon size={20} strokeWidth={1.8} /></span>
       <span className="calculator-row__copy">
         <strong>{calculator.title}</strong>
         <small>{calculator.description}</small>
       </span>
       {calculator.status === 'ready' ? (
-        <span className="status-pill">First up</span>
+        <span className="status-pill">{calculator.featured ? 'First up' : 'Ready'}</span>
       ) : (
         <span className="calculator-row__arrow"><ArrowRight size={18} /></span>
       )}
@@ -30,6 +92,8 @@ function CalculatorRow({ calculator }: { calculator: CalculatorItem }) {
 export function CalculatorIndex() {
   const FeaturedIcon = calculators[0].icon
   const [query, setQuery] = useState('')
+  const [activeCalculator, setActiveCalculator] =
+    useState<ActiveCalculator>(calculatorFromHash)
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     'Mortgage & financing': true,
     'Buying & selling': true,
@@ -47,11 +111,83 @@ export function CalculatorIndex() {
     [normalizedQuery],
   )
 
+  useEffect(() => {
+    function syncCalculatorFromHash() {
+      setActiveCalculator(calculatorFromHash())
+    }
+
+    window.addEventListener('hashchange', syncCalculatorFromHash)
+    return () => window.removeEventListener('hashchange', syncCalculatorFromHash)
+  }, [])
+
+  function openCalculator(calculatorId: string) {
+    if ((OPENABLE_CALCULATORS as string[]).includes(calculatorId)) {
+      setActiveCalculator(calculatorId as ActiveCalculator)
+    }
+  }
+
+  function closeCalculator() {
+    setActiveCalculator(null)
+    window.location.hash = 'calculators'
+  }
+
   function toggleCategory(category: string) {
     setOpenCategories((current) => ({
       ...current,
       [category]: !current[category],
     }))
+  }
+
+  if (activeCalculator === 'mortgage-calculator') {
+    return <MortgageCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'cash-out-refinance') {
+    return <CashOutRefinanceCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'amortization-schedule') {
+    return <AmortizationCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'loan-comparison') {
+    return <LoanComparisonCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'affordability') {
+    return <AffordabilityCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'mortgage-rates') {
+    return <MortgageRatesCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'rent-vs-buy') {
+    return <RentVsBuyCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'seller-net-proceeds') {
+    return <SellerProceedsCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'buyer-closing-costs') {
+    return <BuyerClosingCostsCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'down-payment') {
+    return <DownPaymentPlannerCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'home-equity') {
+    return <HomeEquityCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'investment-property') {
+    return <InvestmentPropertyCalculator onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'refinance-break-even') {
+    return <RefinanceBreakEvenCalculator onBack={closeCalculator} />
   }
 
   return (
@@ -93,7 +229,7 @@ export function CalculatorIndex() {
               </div>
               <div className="calculator-list">
                 {filteredCalculators.map((calculator) => (
-                  <CalculatorRow calculator={calculator} key={calculator.id} />
+                  <CalculatorRow calculator={calculator} key={calculator.id} onOpen={openCalculator} />
                 ))}
                 {filteredCalculators.length === 0 && (
                   <div className="empty-state">
@@ -125,7 +261,7 @@ export function CalculatorIndex() {
                   {isOpen && (
                     <div className="calculator-list">
                       {items.map((calculator) => (
-                        <CalculatorRow calculator={calculator} key={calculator.id} />
+                        <CalculatorRow calculator={calculator} key={calculator.id} onOpen={openCalculator} />
                       ))}
                     </div>
                   )}

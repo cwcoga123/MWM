@@ -32,6 +32,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
         .join(''),
     [user.name],
   )
+  const roleLabel = user.role[0].toUpperCase() + user.role.slice(1)
 
   return (
     <div className="app-shell">
@@ -67,9 +68,36 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           <a href="#help"><CircleHelp size={17} /> Help & support</a>
           <a href="#settings"><Settings size={17} /> Settings</a>
         </nav>
-        <div className="sidebar__footer">
-          <span className="secure-dot" />
-          Private client workspace
+
+        <div className="sidebar__account">
+          <button className="notification-button" aria-label="Notifications">
+            <Bell size={17} />
+            <span>Notifications</span>
+            <span className="notification-button__dot" aria-hidden="true" />
+          </button>
+          <div className="profile-menu">
+            <button
+              className="profile-button"
+              onClick={() => setProfileOpen((open) => !open)}
+              aria-expanded={profileOpen}
+              aria-haspopup="menu"
+            >
+              <span className="avatar">{initials || 'M'}</span>
+              <span className="profile-button__copy">
+                <strong>{user.name}</strong>
+                <small>{roleLabel}</small>
+              </span>
+              <ChevronDown size={16} />
+            </button>
+            {profileOpen && (
+              <div className="profile-popover" role="menu">
+                <p>{user.email}</p>
+                <button role="menuitem" onClick={() => void onSignOut()}>
+                  <LogOut size={16} /> Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -82,45 +110,13 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
       )}
 
       <div className="app-main">
-        <header className="topbar">
-          <button
-            className="icon-button topbar__menu"
-            onClick={() => setMobileNavOpen(true)}
-            aria-label="Open navigation"
-          >
-            <Menu size={21} />
-          </button>
-          <div>
-            <p className="topbar__context">PRIVATE CLIENT WORKSPACE</p>
-            <p className="topbar__title">Financial tools</p>
-          </div>
-          <div className="topbar__actions">
-            <button className="icon-button notification-button" aria-label="Notifications">
-              <Bell size={19} />
-              <span />
-            </button>
-            <div className="profile-menu">
-              <button
-                className="profile-button"
-                onClick={() => setProfileOpen((open) => !open)}
-                aria-expanded={profileOpen}
-              >
-                <span className="avatar">{initials || 'M'}</span>
-                <span className="profile-button__copy">
-                  <strong>{user.name}</strong>
-                  <small>Client</small>
-                </span>
-                <ChevronDown size={16} />
-              </button>
-              {profileOpen && (
-                <div className="profile-popover">
-                  <p>{user.email}</p>
-                  <button onClick={() => void onSignOut()}><LogOut size={16} /> Sign out</button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
+        <button
+          className="icon-button mobile-nav-trigger"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open navigation"
+        >
+          <Menu size={21} />
+        </button>
 
         <CalculatorIndex />
       </div>
