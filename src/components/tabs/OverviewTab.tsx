@@ -1,9 +1,9 @@
 import { ArrowRight, Home, Sparkles } from 'lucide-react'
-import type { HubUser } from './AuthGate'
-import { calculators } from '../data/calculators'
-import { FredIndicatorsSection } from './FredIndicatorsSection'
-import { marketPulseInsights, type MarketPulseInsight } from '../data/marketPulse'
-import { quickActions } from '../data/quickActions'
+import type { HubUser } from '../shell/AuthGate'
+import { calculators } from '../../data/calculators'
+import { FredIndicatorsSection } from '../shared/FredIndicatorsSection'
+import { marketPulseInsights, type MarketPulseInsight } from '../../data/marketPulse'
+import { quickActions } from '../../data/quickActions'
 
 interface OverviewTabProps {
   user: HubUser

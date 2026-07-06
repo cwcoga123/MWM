@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { ArrowLeft, HelpCircle, KeyRound, Printer, RotateCcw } from 'lucide-react'
-import { calculateRefinanceBreakEven } from '../lib/refinanceBreakEven'
+import { calculateRefinanceBreakEven } from '../../lib/refinanceBreakEven'
 
 interface RefinanceBreakEvenCalculatorProps {
   onBack: () => void

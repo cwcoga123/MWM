@@ -9,7 +9,7 @@ import {
   pmiRates,
   type CreditScoreId,
   type LoanTermId,
-} from '../lib/mortgage'
+} from '../../lib/mortgage'
 
 type DownPaymentMode = 'dollars' | 'percent'
 

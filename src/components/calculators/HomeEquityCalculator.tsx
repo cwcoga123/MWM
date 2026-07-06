@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { ArrowLeft, HelpCircle, Printer, RotateCcw, TrendingUp } from 'lucide-react'
-import { calculateHomeEquity } from '../lib/homeEquity'
+import { calculateHomeEquity } from '../../lib/homeEquity'
 
 interface HomeEquityCalculatorProps {
   onBack: () => void

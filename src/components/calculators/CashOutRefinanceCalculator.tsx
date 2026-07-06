@@ -7,7 +7,7 @@ import {
   loanTerms,
   type CreditScoreId,
   type LoanTermId,
-} from '../lib/mortgage'
+} from '../../lib/mortgage'
 
 interface CashOutRefinanceCalculatorProps {
   onBack: () => void

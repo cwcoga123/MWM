@@ -1,12 +1,12 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { ArrowLeft, HelpCircle, Printer, RotateCcw, Scale } from 'lucide-react'
-import { loanTerms, type LoanTermId } from '../lib/mortgage'
+import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 import {
   calculateRentVsBuy,
   downPaymentAmount,
   propertyTaxAmount,
   type AmountMode,
-} from '../lib/rentVsBuy'
+} from '../../lib/rentVsBuy'
 
 interface RentVsBuyCalculatorProps {
   onBack: () => void
@@ -80,11 +80,10 @@ interface PercentFieldProps {
   label: string
   value: number
   onChange: (value: number) => void
-  step?: string
   help?: string
 }
 
-function PercentField({ id, label, value, onChange, step = '0.1', help }: PercentFieldProps) {
+function PercentField({ id, label, value, onChange, help }: PercentFieldProps) {
   const [rawInput, setRawInput] = useState<string | null>(null)
   const displayValue = rawInput !== null ? rawInput : String(value)
   return (
@@ -563,7 +562,6 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
               label="Interest rate *"
               value={interestRate}
               onChange={setInterestRate}
-              step="0.01"
               help="Your expected annual mortgage interest rate."
             />
 

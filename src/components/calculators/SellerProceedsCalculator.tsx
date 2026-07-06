@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, CircleDollarSign, HelpCircle, Printer, RotateCcw } from 'lucide-react'
-import { calculateSellerProceeds, conicGradient } from '../lib/sellerProceeds'
+import { calculateSellerProceeds, conicGradient } from '../../lib/sellerProceeds'
 import {
   CA_CLOSING_CUSTOMS_SOURCE,
   caClosingCustoms,
@@ -9,7 +9,7 @@ import {
   countyTransferTaxAmount,
   customaryShare,
   payerLabel,
-} from '../data/caClosingCustoms'
+} from '../../data/caClosingCustoms'
 
 interface SellerProceedsCalculatorProps {
   onBack: () => void

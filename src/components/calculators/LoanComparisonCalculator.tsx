@@ -6,8 +6,8 @@ import {
   type ComparisonDownPaymentMode,
   type ComparisonLoanInput,
   type ComparisonLoanResult,
-} from '../lib/loanComparison'
-import { loanTerms, type LoanTermId } from '../lib/mortgage'
+} from '../../lib/loanComparison'
+import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 
 interface LoanComparisonCalculatorProps {
   onBack: () => void

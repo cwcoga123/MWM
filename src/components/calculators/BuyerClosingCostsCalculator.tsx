@@ -8,15 +8,15 @@ import {
   countyTransferTaxAmount,
   customaryShare,
   payerLabel,
-} from '../data/caClosingCustoms'
-import { loanTerms, type LoanTermId } from '../lib/mortgage'
+} from '../../data/caClosingCustoms'
+import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 import {
   calculateBuyerClosingCosts,
   conicGradient,
   defaultFirstPaymentDue,
   downPaymentAmount,
   type AmountMode,
-} from '../lib/buyerClosingCosts'
+} from '../../lib/buyerClosingCosts'
 
 interface BuyerClosingCostsCalculatorProps {
   onBack: () => void

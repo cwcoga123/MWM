@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { CalendarClock, Mail, MessageCircle, Phone, X } from 'lucide-react'
-import { advisorContact } from '../data/advisor'
+import { advisorContact } from '../../data/advisor'
 
 interface AdvisorContactCardProps {
   open: boolean

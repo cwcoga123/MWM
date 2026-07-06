@@ -1,6 +1,6 @@
 import { ArrowUpRight, Minus, TrendingDown, TrendingUp } from 'lucide-react'
-import { fredIndicatorCategories, fredIndicators, type FredIndicatorCategory } from '../data/fredIndicators'
-import fredSnapshot from '../data/fredSnapshot.json'
+import { fredIndicatorCategories, fredIndicators, type FredIndicatorCategory } from '../../data/fredIndicators'
+import fredSnapshot from '../../data/fredSnapshot.json'
 import {
   formatFredDate,
   formatFredValue,
@@ -10,7 +10,7 @@ import {
   formatTrendPeriodLabel,
   getTrendDirection,
   type FredTrendDirection,
-} from '../lib/formatFredValue'
+} from '../../lib/formatFredValue'
 
 interface FredSnapshotEntry {
   seriesId: string

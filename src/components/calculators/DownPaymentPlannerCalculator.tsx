@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, Banknote, HelpCircle, Printer, RotateCcw } from 'lucide-react'
-import { loanTerms, type LoanTermId } from '../lib/mortgage'
-import { calculateDownPaymentPlan, downPaymentAmountFor, type AmountMode } from '../lib/downPaymentPlanner'
+import { loanTerms, type LoanTermId } from '../../lib/mortgage'
+import { calculateDownPaymentPlan, downPaymentAmountFor, type AmountMode } from '../../lib/downPaymentPlanner'
 
 interface DownPaymentPlannerCalculatorProps {
   onBack: () => void

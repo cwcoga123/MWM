@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, HelpCircle, Landmark, Printer, RotateCcw } from 'lucide-react'
-import { loanTerms, type LoanTermId } from '../lib/mortgage'
-import { calculateInvestmentProperty, conicGradient, downPaymentAmountFor, type AmountMode } from '../lib/investmentProperty'
+import { loanTerms, type LoanTermId } from '../../lib/mortgage'
+import { calculateInvestmentProperty, conicGradient, downPaymentAmountFor, type AmountMode } from '../../lib/investmentProperty'
 
 interface InvestmentPropertyCalculatorProps {
   onBack: () => void

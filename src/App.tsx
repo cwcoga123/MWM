@@ -1,5 +1,5 @@
-import { AuthGate } from './components/AuthGate'
-import { AppShell } from './components/AppShell'
+import { AuthGate } from './components/shell/AuthGate'
+import { AppShell } from './components/shell/AppShell'
 
 export default function App() {
   return (

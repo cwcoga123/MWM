@@ -5,12 +5,12 @@ import {
   getAccountProfile,
   type AccountProfile,
   type AccountRole,
-} from '../lib/accounts'
+} from '../../lib/accounts'
 import {
   isSupabaseConfigured,
   supabase,
   supabaseConfigurationError,
-} from '../lib/supabase'
+} from '../../lib/supabase'
 
 export interface HubUser {
   email: string

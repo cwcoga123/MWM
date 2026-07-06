@@ -9,7 +9,7 @@ import {
   CREDIT_SCORE_MIN,
   formatRate,
   rateProducts,
-} from '../lib/mortgageRates'
+} from '../../lib/mortgageRates'
 
 interface MortgageRatesCalculatorProps {
   onBack: () => void

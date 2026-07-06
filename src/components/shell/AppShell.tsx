@@ -12,9 +12,9 @@ import {
   X,
 } from 'lucide-react'
 import type { HubUser } from './AuthGate'
-import { CalculatorIndex } from './CalculatorIndex'
-import { OverviewTab } from './OverviewTab'
-import { AdvisorContactCard } from './AdvisorContactCard'
+import { CalculatorIndex } from '../tabs/CalculatorIndex'
+import { OverviewTab } from '../tabs/OverviewTab'
+import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 
 interface AppShellProps {
   user: HubUser

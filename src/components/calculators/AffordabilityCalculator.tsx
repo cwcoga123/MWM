@@ -12,7 +12,7 @@ import {
   TARGET_DTI,
   type CreditScoreId,
   type LoanTermId,
-} from '../lib/affordability'
+} from '../../lib/affordability'
 
 interface AffordabilityCalculatorProps {
   onBack: () => void

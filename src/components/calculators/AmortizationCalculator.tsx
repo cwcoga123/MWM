@@ -16,7 +16,7 @@ import {
   summarizeByYear,
   type AmortizationLoanTermId,
   type PaymentFrequencyId,
-} from '../lib/amortization'
+} from '../../lib/amortization'
 
 interface AmortizationCalculatorProps {
   onBack: () => void
