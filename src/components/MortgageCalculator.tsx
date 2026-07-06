@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ArrowLeft, House, Printer, RotateCcw, Sparkles } from 'lucide-react'
+import { ArrowLeft, HelpCircle, House, Printer, RotateCcw, Sparkles } from 'lucide-react'
 import {
   calculateInterestRate,
   calculateMortgagePayment,
+  calculatePmiRate,
   creditScores,
   loanTerms,
+  pmiRates,
   type CreditScoreId,
   type LoanTermId,
 } from '../lib/mortgage'
@@ -42,20 +44,35 @@ function getPaymentFontSize(formattedAmount: string) {
   )
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface MoneyFieldProps {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
   suffix?: string
+  help?: string
 }
 
-function MoneyField({ id, label, value, onChange, suffix }: MoneyFieldProps) {
+function MoneyField({ id, label, value, onChange, suffix, help }: MoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -85,6 +102,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
   const [annualInsurance, setAnnualInsurance] = useState(0)
   const [annualPropertyTax, setAnnualPropertyTax] = useState(1_200)
   const [downPaymentFocused, setDownPaymentFocused] = useState(false)
+  const [removePmi, setRemovePmi] = useState(false)
 
   const loanTerm =
     loanTerms.find((term) => term.id === loanTermId) ?? loanTerms[0]
@@ -105,29 +123,57 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
     monthlyHoa,
   })
 
+  const ltv = homePrice > 0 ? payment.loanAmount / homePrice : 0
+  const pmiEligible = ltv > 0.8
+  const annualPmiRate = calculatePmiRate(creditScoreId, ltv)
+  const monthlyPmi = pmiEligible && !removePmi ? (payment.loanAmount * annualPmiRate) / 12 : 0
+  const totalMonthly = payment.total + monthlyPmi
+
   const components = [
     {
       label: 'Principal & interest',
       value: payment.principalAndInterest,
       color: '#2f81f7',
+      help: 'The portion of the payment that goes to the lender for the loan itself, excluding taxes, insurance, and HOA.',
     },
-    { label: 'Property tax', value: payment.propertyTax, color: '#3fb950' },
-    { label: 'Home insurance', value: payment.homeInsurance, color: '#d29922' },
-    { label: 'HOA', value: payment.hoa, color: '#f47067' },
+    ...(pmiEligible ? [{
+      label: 'Mortgage insurance',
+      value: monthlyPmi,
+      color: '#a371f7',
+      help: `Private mortgage insurance (PMI) is required when your down payment is below 20%. Your estimated rate is ${(annualPmiRate * 100).toFixed(2)}% per year based on your credit score. Formula: loan amount × ${(annualPmiRate * 100).toFixed(2)}% ÷ 12.`,
+    }] : []),
+    {
+      label: 'Property tax',
+      value: payment.propertyTax,
+      color: '#3fb950',
+      help: "Monthly share of the property's annual tax bill, collected into escrow.",
+    },
+    {
+      label: 'Home insurance',
+      value: payment.homeInsurance,
+      color: '#d29922',
+      help: "Monthly share of the annual homeowner's insurance premium.",
+    },
+    {
+      label: 'HOA',
+      value: payment.hoa,
+      color: '#f47067',
+      help: 'Monthly homeowners association dues, if any.',
+    },
   ]
   let runningPercent = 0
   const gradientStops = components.map((component) => {
     const start = runningPercent
-    runningPercent += payment.total ? (component.value / payment.total) * 100 : 0
+    runningPercent += totalMonthly ? (component.value / totalMonthly) * 100 : 0
     return `${component.color} ${start}% ${runningPercent}%`
   })
-  const donutBackground = payment.total
+  const donutBackground = totalMonthly
     ? `conic-gradient(${gradientStops.join(', ')})`
     : 'conic-gradient(#30363d 0 100%)'
   const paymentDescription = components
     .map((component) => `${component.label}: ${preciseCurrency.format(component.value)}`)
     .join('. ')
-  const formattedTotal = currency.format(payment.total)
+  const formattedTotal = currency.format(totalMonthly)
 
   function changeDownPaymentMode(nextMode: DownPaymentMode) {
     if (nextMode === downPaymentMode) return
@@ -151,6 +197,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
     setMonthlyHoa(0)
     setAnnualInsurance(0)
     setAnnualPropertyTax(1_200)
+    setRemovePmi(false)
   }
 
   return (
@@ -200,7 +247,9 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
                     aria-hidden="true"
                   />
                   <span>
-                    <small>{component.label}</small>
+                    <small>
+                      <FieldLabel label={component.label} help={component.help} />
+                    </small>
                     <strong>{preciseCurrency.format(component.value)}</strong>
                   </span>
                 </div>
@@ -212,7 +261,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
                 className="mortgage-donut"
                 style={{ background: donutBackground }}
                 role="img"
-                aria-label={`${preciseCurrency.format(payment.total)} estimated monthly payment. ${paymentDescription}.`}
+              aria-label={`${preciseCurrency.format(totalMonthly)} estimated monthly payment. ${paymentDescription}.`}
               >
                 <div className="mortgage-donut__center" aria-hidden="true">
                   <strong style={{ fontSize: getPaymentFontSize(formattedTotal) }}>
@@ -232,8 +281,8 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
             <Sparkles size={17} aria-hidden="true" />
             <p>
               Principal and interest are {Math.round(
-                payment.total
-                  ? (payment.principalAndInterest / payment.total) * 100
+                totalMonthly
+                  ? (payment.principalAndInterest / totalMonthly) * 100
                   : 0,
               )}% of this estimate.
             </p>
@@ -251,10 +300,13 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
             label="Home price"
             value={homePrice}
             onChange={setHomePrice}
+            help="The purchase price you're targeting or under contract for."
           />
 
           <fieldset className="mortgage-down-payment">
-            <legend>Down payment</legend>
+            <legend>
+              <FieldLabel label="Down payment" help="Cash you pay upfront toward the purchase. Below 20% down, lenders typically add PMI (mortgage insurance) to your monthly payment." />
+            </legend>
             <div className="mortgage-down-payment__row">
               <span className="mortgage-input">
                 <span className="mortgage-input__prefix" aria-hidden="true">
@@ -296,7 +348,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
           </fieldset>
 
           <label className="mortgage-field" htmlFor="loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years you'll take to pay off the loan. A 30-year term has lower monthly payments; a 15-year term costs less interest overall." />
             <span className="mortgage-select">
               <select
                 id="loan-term"
@@ -312,7 +364,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
           </label>
 
           <label className="mortgage-field" htmlFor="credit-score">
-            <span>Credit score</span>
+            <FieldLabel label="Credit score" help="Your approximate credit score range — used to estimate the interest rate you'd qualify for." />
             <span className="mortgage-select">
               <select
                 id="credit-score"
@@ -329,7 +381,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
           </label>
 
           <label className="mortgage-field" htmlFor="interest-rate">
-            <span>Estimated interest rate</span>
+            <FieldLabel label="Estimated interest rate" help="Automatically estimated from your selected loan term and credit score." />
             <span className="mortgage-input mortgage-input--rate">
               <span className="mortgage-input__prefix" aria-hidden="true">%</span>
               <input
@@ -345,6 +397,24 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
             </small>
           </label>
 
+          {pmiEligible && (
+            <label className="mortgage-pmi-toggle">
+              <input
+                type="checkbox"
+                checked={removePmi}
+                onChange={(e) => setRemovePmi(e.target.checked)}
+              />
+              <span>
+                Remove mortgage insurance (PMI)
+                <small>
+                  {removePmi
+                    ? 'PMI excluded — estimated savings of ' + preciseCurrency.format((payment.loanAmount * annualPmiRate) / 12) + '/mo'
+                    : preciseCurrency.format(monthlyPmi) + '/mo · ' + (pmiRates[creditScoreId] * 100).toFixed(2) + '% annual rate for your credit score'}
+                </small>
+              </span>
+            </label>
+          )}
+
           <div className="mortgage-form__divider" />
 
           <div className="mortgage-expense-grid">
@@ -354,6 +424,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
               value={annualPropertyTax}
               onChange={setAnnualPropertyTax}
               suffix="/ year"
+              help="Yearly property tax billed by the county, usually collected monthly by the lender through escrow."
             />
             <MoneyField
               id="home-insurance"
@@ -361,6 +432,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
               value={annualInsurance}
               onChange={setAnnualInsurance}
               suffix="/ year"
+              help="Yearly homeowner's insurance premium, also usually collected monthly through escrow."
             />
           </div>
 
@@ -370,6 +442,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
             value={monthlyHoa}
             onChange={setMonthlyHoa}
             suffix="/ month"
+            help="Homeowners association dues, if the property has them. Enter 0 if none."
           />
         </form>
       </section>

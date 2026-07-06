@@ -204,7 +204,13 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
 
       <section className="seller-proceeds-panel down-payment-panel">
         <div className="mortgage-expense-grid">
-          <MoneyField id="dpp-home-price" label="Home price" value={homePrice} onChange={setHomePrice} />
+          <MoneyField
+            id="dpp-home-price"
+            label="Home price"
+            value={homePrice}
+            onChange={setHomePrice}
+            help="The purchase price you're targeting or under contract for."
+          />
           <fieldset className="mortgage-down-payment">
             <legend>
               <FieldLabel
@@ -252,9 +258,15 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
         </div>
 
         <div className="mortgage-expense-grid">
-          <PercentField id="dpp-interest-rate" label="Interest rate *" value={interestRate} onChange={setInterestRate} />
+          <PercentField
+            id="dpp-interest-rate"
+            label="Interest rate *"
+            value={interestRate}
+            onChange={setInterestRate}
+            help="Your expected annual mortgage interest rate. See the note below for how this comparison rate is derived."
+          />
           <label className="mortgage-field" htmlFor="dpp-loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years you'll take to pay off the loan. A 30-year term has lower monthly payments; a 15-year term costs less interest overall." />
             <span className="mortgage-select">
               <select id="dpp-loan-term" value={loanTermId} onChange={(event) => setLoanTermId(event.target.value as LoanTermId)}>
                 {loanTerms.map((term) => (
@@ -279,8 +291,20 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
 
         {showAdvanced && (
           <div className="mortgage-expense-grid">
-            <MoneyField id="dpp-property-tax" label="Annual property tax" value={annualPropertyTax} onChange={setAnnualPropertyTax} />
-            <MoneyField id="dpp-home-insurance" label="Annual home insurance" value={annualHomeInsurance} onChange={setAnnualHomeInsurance} />
+            <MoneyField
+              id="dpp-property-tax"
+              label="Annual property tax"
+              value={annualPropertyTax}
+              onChange={setAnnualPropertyTax}
+              help="Yearly property tax billed by the county, usually collected monthly by the lender through escrow."
+            />
+            <MoneyField
+              id="dpp-home-insurance"
+              label="Annual home insurance"
+              value={annualHomeInsurance}
+              onChange={setAnnualHomeInsurance}
+              help="Yearly homeowner's (hazard) insurance premium, also usually collected monthly through escrow."
+            />
             <MoneyField
               id="dpp-hoa"
               label="Monthly HOA"
@@ -293,7 +317,7 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
               label="Estimated closing costs"
               value={closingCostRate}
               onChange={setClosingCostRate}
-              help="Lender, title, escrow, and government fees paid at closing — typically 2–5% of the home price. Doesn't include prepaid taxes and insurance."
+              help="Lender, title, escrow, and government fees paid at closing — typically 2–5% of the home price. Doesn't include prepaid taxes and insurance. In California the county transfer tax ($1.10 per $1,000) is customarily paid by the seller, so it's usually not part of buyer closing costs — though who pays escrow and title fees varies by county."
             />
           </div>
         )}
@@ -309,7 +333,9 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
         <div className="down-payment-summary">
           <div className="amortization-summary-list">
             <div>
-              <dt>Loan amount</dt>
+              <dt>
+                <FieldLabel label="Loan amount" help="Home price minus your down payment — the amount you're borrowing from the lender." />
+              </dt>
               <dd>{currency.format(result.loanAmount)}</dd>
             </div>
             <div>
@@ -323,11 +349,15 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
             </div>
             <div className="amortization-summary-list__group">
               <div>
-                <dt>Total monthly payment</dt>
+                <dt>
+                  <FieldLabel label="Total monthly payment" help="Principal, interest, taxes, insurance, HOA, and PMI (if applicable) combined — your full monthly housing cost." />
+                </dt>
                 <dd>{currency.format(result.totalMonthlyPayment)}</dd>
               </div>
               <div className="amortization-summary-list__sub">
-                <span>Principal & interest</span>
+                <span>
+                  <FieldLabel label="Principal & interest" help="The portion of your payment that goes to the lender for the loan itself — excludes taxes, insurance, and HOA." />
+                </span>
                 <span>{currency.format(result.monthlyPI)}</span>
               </div>
               {result.pmiRequired && (
@@ -342,7 +372,9 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
                 </div>
               )}
               <div className="amortization-summary-list__sub">
-                <span>Tax, insurance & HOA</span>
+                <span>
+                  <FieldLabel label="Tax, insurance & HOA" help="Monthly property tax, homeowner's insurance, and HOA dues combined, based on the fields above." />
+                </span>
                 <span>{currency.format(result.monthlyTax + result.monthlyInsurance + result.monthlyHoa)}</span>
               </div>
             </div>
@@ -383,17 +415,27 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
             <table className="amortization-table down-payment-table">
               <thead>
                 <tr>
-                  <th>Down payment</th>
-                  <th>Loan amount</th>
-                  <th>Monthly payment</th>
+                  <th>
+                    <FieldLabel label="Down payment" help="The down payment percentage and dollar amount for this scenario, for comparison against your entered value." />
+                  </th>
+                  <th>
+                    <FieldLabel label="Loan amount" help="Home price minus the down payment for this scenario." />
+                  </th>
+                  <th>
+                    <FieldLabel label="Monthly payment" help="Total monthly payment at this down payment level, including principal, interest, taxes, insurance, HOA, and PMI." />
+                  </th>
                   <th>
                     <FieldLabel
                       label="PMI"
                       help="Private mortgage insurance — added to the payment when the down payment is under 20%. Estimated at a flat 0.56%/yr; actual PMI rates drop as the down payment grows."
                     />
                   </th>
-                  <th>Cash needed</th>
-                  <th>Reserves after</th>
+                  <th>
+                    <FieldLabel label="Cash needed" help="Down payment plus estimated closing costs at this scenario's down payment level." />
+                  </th>
+                  <th>
+                    <FieldLabel label="Reserves after" help="Cash left in your reserves after paying the down payment and closing costs at this scenario's level." />
+                  </th>
                 </tr>
               </thead>
               <tbody>

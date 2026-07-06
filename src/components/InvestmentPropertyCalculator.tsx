@@ -235,7 +235,13 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
 
       <section className="seller-proceeds-panel investment-property-panel">
         <div className="mortgage-expense-grid">
-          <MoneyField id="ip-purchase-price" label="Purchase price" value={purchasePrice} onChange={setPurchasePrice} />
+          <MoneyField
+            id="ip-purchase-price"
+            label="Purchase price"
+            value={purchasePrice}
+            onChange={setPurchasePrice}
+            help="The price you're paying (or considering) for the investment property."
+          />
           <fieldset className="mortgage-down-payment">
             <legend>
               <FieldLabel
@@ -283,9 +289,16 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
         </div>
 
         <div className="mortgage-expense-grid">
-          <PercentField id="ip-interest-rate" label="Interest rate" value={interestRate} onChange={setInterestRate} step="0.01" />
+          <PercentField
+            id="ip-interest-rate"
+            label="Interest rate"
+            value={interestRate}
+            onChange={setInterestRate}
+            step="0.01"
+            help="Your expected annual mortgage interest rate. Investment property loans typically carry a slightly higher rate than owner-occupied loans."
+          />
           <label className="mortgage-field" htmlFor="ip-loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years you'll take to pay off the loan — 30-year fixed is most common for rental financing." />
             <span className="mortgage-select">
               <select id="ip-loan-term" value={loanTermId} onChange={(event) => setLoanTermId(event.target.value as LoanTermId)}>
                 {loanTerms.map((term) => (
@@ -296,7 +309,13 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
           </label>
         </div>
 
-        <MoneyField id="ip-monthly-rent" label="Monthly rent" value={monthlyRent} onChange={setMonthlyRent} />
+        <MoneyField
+          id="ip-monthly-rent"
+          label="Monthly rent"
+          value={monthlyRent}
+          onChange={setMonthlyRent}
+          help="The gross monthly rent you expect to collect before vacancy and expenses."
+        />
 
         <p className="seller-proceeds-note">
           You can increase the accuracy of this calculator by filling in additional fields.
@@ -321,8 +340,20 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
               />
             </div>
             <div className="mortgage-expense-grid">
-              <MoneyField id="ip-property-tax" label="Annual property tax" value={annualPropertyTax} onChange={setAnnualPropertyTax} />
-              <MoneyField id="ip-insurance" label="Annual insurance" value={annualInsurance} onChange={setAnnualInsurance} />
+              <MoneyField
+                id="ip-property-tax"
+                label="Annual property tax"
+                value={annualPropertyTax}
+                onChange={setAnnualPropertyTax}
+                help="Yearly property tax billed by the county for this property."
+              />
+              <MoneyField
+                id="ip-insurance"
+                label="Annual insurance"
+                value={annualInsurance}
+                onChange={setAnnualInsurance}
+                help="Yearly landlord/hazard insurance premium for the property."
+              />
             </div>
             <div className="mortgage-expense-grid">
               <MoneyField
@@ -353,7 +384,7 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
                 label="Estimated closing costs"
                 value={closingCostRate}
                 onChange={setClosingCostRate}
-                help="Lender, title, escrow, and government fees paid at closing — typically 2–5% of the purchase price."
+                help="Lender, title, escrow, and government fees paid at closing — typically 2–5% of the purchase price. In California the county transfer tax ($1.10 per $1,000) is customarily seller-paid; some cities (e.g. Oakland, LA, San Jose) add sizable city transfer taxes — factor those in when you sell the property."
               />
             </div>
           </div>
@@ -399,7 +430,9 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
 
         <div className="amortization-summary-list investment-property-summary">
           <div>
-            <dt>Loan amount</dt>
+            <dt>
+              <FieldLabel label="Loan amount" help="Purchase price minus your down payment — the amount financed by the mortgage." />
+            </dt>
             <dd>{currency.format(result.loanAmount)}</dd>
           </div>
           <div>

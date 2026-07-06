@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, HandCoins, Printer, RotateCcw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, HandCoins, HelpCircle, Printer, RotateCcw, ShieldCheck } from 'lucide-react'
 import {
   calculateInterestRate,
   calculateMortgagePayment,
@@ -37,6 +37,20 @@ function getPaymentFontSize(formattedAmount: string) {
   return Math.max(11, Math.min(42, Math.floor(336 / formattedAmount.length)))
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface RefinanceMoneyFieldProps {
   id: string
   label: string
@@ -44,6 +58,7 @@ interface RefinanceMoneyFieldProps {
   onChange: (value: number) => void
   suffix?: string
   describedBy?: string
+  help?: string
 }
 
 function RefinanceMoneyField({
@@ -53,12 +68,13 @@ function RefinanceMoneyField({
   onChange,
   suffix,
   describedBy,
+  help,
 }: RefinanceMoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -120,11 +136,32 @@ export function CashOutRefinanceCalculator({
       label: 'Principal & interest',
       value: basePayment.principalAndInterest,
       color: '#2f81f7',
+      help: 'The portion of the payment that goes to the lender for the loan itself, excluding taxes, insurance, and HOA.',
     },
-    { label: 'Property tax', value: basePayment.propertyTax, color: '#3fb950' },
-    { label: 'Home insurance', value: basePayment.homeInsurance, color: '#d29922' },
-    { label: 'HOA', value: basePayment.hoa, color: '#f47067' },
-    { label: 'Mortgage insurance', value: mortgageInsurance, color: '#db3b3b' },
+    {
+      label: 'Property tax',
+      value: basePayment.propertyTax,
+      color: '#3fb950',
+      help: "Monthly share of the property's annual tax bill, collected into escrow.",
+    },
+    {
+      label: 'Home insurance',
+      value: basePayment.homeInsurance,
+      color: '#d29922',
+      help: "Monthly share of the annual homeowner's insurance premium.",
+    },
+    {
+      label: 'HOA',
+      value: basePayment.hoa,
+      color: '#f47067',
+      help: 'Monthly homeowners association dues, if any.',
+    },
+    {
+      label: 'Mortgage insurance',
+      value: mortgageInsurance,
+      color: '#db3b3b',
+      help: 'PMI, added because the new loan-to-value is above 80%. Drops off once you regain enough equity.',
+    },
   ]
   let runningPercent = 0
   const gradientStops = components.map((component) => {
@@ -184,7 +221,9 @@ export function CashOutRefinanceCalculator({
           <div className="mortgage-result__header refinance-result__header">
             <div>
               <span className="eyebrow">ESTIMATED EQUITY ACCESS</span>
-              <h2 id="cash-available-title">Cash available</h2>
+              <h2 id="cash-available-title">
+                <FieldLabel label="Cash available" help="The most you could receive in cash, keeping the new loan at or below 85% of your home's value." />
+              </h2>
               <strong className="refinance-cash-amount">
                 {currency.format(maximumCashAvailable)}
               </strong>
@@ -204,7 +243,9 @@ export function CashOutRefinanceCalculator({
                     aria-hidden="true"
                   />
                   <span>
-                    <small>{component.label}</small>
+                    <small>
+                      <FieldLabel label={component.label} help={component.help} />
+                    </small>
                     <strong>{preciseCurrency.format(component.value)}</strong>
                   </span>
                 </div>
@@ -252,12 +293,14 @@ export function CashOutRefinanceCalculator({
             label="Home value"
             value={homeValue}
             onChange={setHomeValue}
+            help="Your home's estimated current market value."
           />
           <RefinanceMoneyField
             id="current-loan-balance"
             label="Current loan balance"
             value={loanBalance}
             onChange={setLoanBalance}
+            help="What you still owe on your existing mortgage today."
           />
           <RefinanceMoneyField
             id="requested-cash-out"
@@ -265,6 +308,7 @@ export function CashOutRefinanceCalculator({
             value={requestedCashOut}
             onChange={setRequestedCashOut}
             describedBy="cash-out-limit"
+            help="How much cash you'd like to receive. Capped at what keeps the new loan at or below 85% of the home's value."
           />
 
           <div
@@ -273,11 +317,15 @@ export function CashOutRefinanceCalculator({
             role="status"
           >
             <span>
-              <small>New loan-to-value</small>
+              <small>
+                <FieldLabel label="New loan-to-value" help="LTV — the new loan amount (old balance plus cash out) divided by the home's value. Capped at 85% in this estimate." />
+              </small>
               <strong>{newLtv.toFixed(1)}%</strong>
             </span>
             <span>
-              <small>Cash applied</small>
+              <small>
+                <FieldLabel label="Cash applied" help="The actual cash-out amount used in the calculation — your requested amount, capped at the maximum available." />
+              </small>
               <strong>{currency.format(appliedCashOut)}</strong>
             </span>
             {requestExceedsLimit && (
@@ -286,7 +334,7 @@ export function CashOutRefinanceCalculator({
           </div>
 
           <label className="mortgage-field" htmlFor="refinance-loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years you'll take to pay off the new loan." />
             <span className="mortgage-select">
               <select
                 id="refinance-loan-term"
@@ -302,7 +350,7 @@ export function CashOutRefinanceCalculator({
           </label>
 
           <label className="mortgage-field" htmlFor="refinance-credit-score">
-            <span>Credit score</span>
+            <FieldLabel label="Credit score" help="Your approximate credit score range — used to estimate the interest rate you'd qualify for." />
             <span className="mortgage-select">
               <select
                 id="refinance-credit-score"
@@ -319,7 +367,7 @@ export function CashOutRefinanceCalculator({
           </label>
 
           <label className="mortgage-field" htmlFor="refinance-interest-rate">
-            <span>Estimated interest rate</span>
+            <FieldLabel label="Estimated interest rate" help="Automatically estimated from your selected loan term and credit score, with a small discount applied for cash-out refinances in this model." />
             <span className="mortgage-input mortgage-input--rate">
               <span className="mortgage-input__prefix" aria-hidden="true">%</span>
               <input
@@ -344,6 +392,7 @@ export function CashOutRefinanceCalculator({
               value={annualPropertyTax}
               onChange={setAnnualPropertyTax}
               suffix="/ year"
+              help="Yearly property tax billed by the county."
             />
             <RefinanceMoneyField
               id="refinance-home-insurance"
@@ -351,6 +400,7 @@ export function CashOutRefinanceCalculator({
               value={annualInsurance}
               onChange={setAnnualInsurance}
               suffix="/ year"
+              help="Yearly homeowner's insurance premium."
             />
           </div>
           <RefinanceMoneyField
@@ -359,6 +409,7 @@ export function CashOutRefinanceCalculator({
             value={monthlyHoa}
             onChange={setMonthlyHoa}
             suffix="/ month"
+            help="Monthly homeowners association dues, if any. Enter 0 if none."
           />
         </form>
       </section>

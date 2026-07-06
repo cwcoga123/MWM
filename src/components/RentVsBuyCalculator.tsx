@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { ArrowLeft, Printer, RotateCcw, Scale } from 'lucide-react'
+import { ArrowLeft, HelpCircle, Printer, RotateCcw, Scale } from 'lucide-react'
 import { loanTerms, type LoanTermId } from '../lib/mortgage'
 import {
   calculateRentVsBuy,
@@ -31,19 +31,34 @@ function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface MoneyFieldProps {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
+  help?: string
 }
 
-function MoneyField({ id, label, value, onChange }: MoneyFieldProps) {
+function MoneyField({ id, label, value, onChange, help }: MoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -66,14 +81,15 @@ interface PercentFieldProps {
   value: number
   onChange: (value: number) => void
   step?: string
+  help?: string
 }
 
-function PercentField({ id, label, value, onChange, step = '0.1' }: PercentFieldProps) {
+function PercentField({ id, label, value, onChange, step = '0.1', help }: PercentFieldProps) {
   const [rawInput, setRawInput] = useState<string | null>(null)
   const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
@@ -107,6 +123,7 @@ interface ToggleAmountFieldProps {
   basis: number
   onValueChange: (value: number) => void
   onModeChange: (mode: AmountMode) => void
+  help?: string
 }
 
 function ToggleAmountField({
@@ -118,6 +135,7 @@ function ToggleAmountField({
   basis,
   onValueChange,
   onModeChange,
+  help,
 }: ToggleAmountFieldProps) {
   const [focused, setFocused] = useState(false)
   function changeMode(nextMode: AmountMode) {
@@ -139,7 +157,9 @@ function ToggleAmountField({
 
   return (
     <fieldset className="mortgage-down-payment">
-      <legend>{legend}</legend>
+      <legend>
+        <FieldLabel label={legend} help={help} />
+      </legend>
       <div className="mortgage-down-payment__row">
         <span className="mortgage-input">
           <span className="mortgage-input__prefix" aria-hidden="true">
@@ -510,8 +530,20 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
         {activeTab === 'basic' ? (
           <form className="rent-vs-buy-form" onSubmit={(event) => event.preventDefault()}>
             <div className="mortgage-expense-grid">
-              <MoneyField id="rvb-home-price" label="Home price" value={homePrice} onChange={setHomePrice} />
-              <MoneyField id="rvb-monthly-rent" label="Monthly rent" value={monthlyRent} onChange={setMonthlyRent} />
+              <MoneyField
+                id="rvb-home-price"
+                label="Home price"
+                value={homePrice}
+                onChange={setHomePrice}
+                help="The purchase price of the home you'd buy instead of renting."
+              />
+              <MoneyField
+                id="rvb-monthly-rent"
+                label="Monthly rent"
+                value={monthlyRent}
+                onChange={setMonthlyRent}
+                help="What you'd pay in rent per month for a comparable home."
+              />
             </div>
 
             <ToggleAmountField
@@ -523,13 +555,21 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
               basis={homePrice}
               onValueChange={setDownPayment}
               onModeChange={setDownPaymentMode}
+              help="Cash paid upfront toward the purchase, in dollars or as a percent of the home price."
             />
 
-            <PercentField id="rvb-interest-rate" label="Interest rate *" value={interestRate} onChange={setInterestRate} step="0.01" />
+            <PercentField
+              id="rvb-interest-rate"
+              label="Interest rate *"
+              value={interestRate}
+              onChange={setInterestRate}
+              step="0.01"
+              help="Your expected annual mortgage interest rate."
+            />
 
             <div className="mortgage-expense-grid">
               <label className="mortgage-field" htmlFor="rvb-loan-term">
-                <span>Loan term</span>
+                <FieldLabel label="Loan term" help="How many years you'll take to pay off the loan." />
                 <span className="mortgage-select">
                   <select
                     id="rvb-loan-term"
@@ -542,7 +582,13 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
                   </select>
                 </span>
               </label>
-              <MoneyField id="rvb-hoa" label="HOA" value={annualHoa} onChange={setAnnualHoa} />
+              <MoneyField
+                id="rvb-hoa"
+                label="HOA"
+                value={annualHoa}
+                onChange={setAnnualHoa}
+                help="Annual homeowners association dues, if the property has them. Enter 0 if none."
+              />
             </div>
 
             <ToggleAmountField
@@ -554,6 +600,7 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
               basis={homePrice}
               onValueChange={setPropertyTax}
               onModeChange={setPropertyTaxMode}
+              help="Yearly property tax, in dollars or as a percent of the home price."
             />
 
             <MoneyField
@@ -561,6 +608,7 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
               label="Home insurance /yr"
               value={annualHomeInsurance}
               onChange={setAnnualHomeInsurance}
+              help="Yearly homeowner's insurance premium you'd pay if you bought."
             />
           </form>
         ) : (
@@ -571,17 +619,42 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
                 label="Home appreciation /yr"
                 value={homeAppreciationRate}
                 onChange={setHomeAppreciationRate}
+                help="How much home values rise per year in your area. The long-term US average is roughly 3–4%, but local markets vary widely."
               />
-              <PercentField id="rvb-rent-growth" label="Rent growth /yr" value={rentGrowthRate} onChange={setRentGrowthRate} />
+              <PercentField
+                id="rvb-rent-growth"
+                label="Rent growth /yr"
+                value={rentGrowthRate}
+                onChange={setRentGrowthRate}
+                help="How much rent is expected to increase each year."
+              />
             </div>
             <div className="mortgage-expense-grid">
-              <PercentField id="rvb-maintenance" label="Maintenance /yr" value={maintenanceRate} onChange={setMaintenanceRate} />
-              <PercentField id="rvb-closing-costs" label="Closing costs" value={closingCostRate} onChange={setClosingCostRate} />
+              <PercentField
+                id="rvb-maintenance"
+                label="Maintenance /yr"
+                value={maintenanceRate}
+                onChange={setMaintenanceRate}
+                help="Annual repairs and upkeep budget, as a percent of the home's value. 1% per year is a common rule of thumb."
+              />
+              <PercentField
+                id="rvb-closing-costs"
+                label="Closing costs"
+                value={closingCostRate}
+                onChange={setClosingCostRate}
+                help="One-time costs to buy the home — lender, title, escrow, and government fees — as a percent of the price."
+              />
             </div>
             <div className="mortgage-expense-grid">
-              <PercentField id="rvb-selling-costs" label="Selling costs" value={sellingCostRate} onChange={setSellingCostRate} />
+              <PercentField
+                id="rvb-selling-costs"
+                label="Selling costs"
+                value={sellingCostRate}
+                onChange={setSellingCostRate}
+                help="What it would cost to sell the home at the end of the comparison period — agent commissions and closing costs, as a percent of sale price."
+              />
               <label className="mortgage-field" htmlFor="rvb-length-of-stay">
-                <span>Length of stay (years)</span>
+                <FieldLabel label="Length of stay (years)" help="How many years you'd stay before selling (if buying) or continue renting — the time horizon for this comparison." />
                 <span className="mortgage-input">
                   <input
                     id="rvb-length-of-stay"

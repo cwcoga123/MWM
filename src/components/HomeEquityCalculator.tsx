@@ -270,7 +270,13 @@ export function HomeEquityCalculator({ onBack }: HomeEquityCalculatorProps) {
 
       <section className="seller-proceeds-panel home-equity-panel">
         <div className="mortgage-expense-grid">
-          <MoneyField id="he-home-value" label="Current home value" value={currentHomeValue} onChange={setCurrentHomeValue} />
+          <MoneyField
+            id="he-home-value"
+            label="Current home value"
+            value={currentHomeValue}
+            onChange={setCurrentHomeValue}
+            help="Your home's estimated current market value — from a recent appraisal, comparable sales, or an online estimate."
+          />
           <MoneyField
             id="he-mortgage-balance"
             label="Current mortgage balance"
@@ -280,8 +286,21 @@ export function HomeEquityCalculator({ onBack }: HomeEquityCalculatorProps) {
           />
         </div>
         <div className="mortgage-expense-grid">
-          <PercentField id="he-interest-rate" label="Interest rate" value={interestRate} onChange={setInterestRate} step="0.01" />
-          <NumberField id="he-remaining-term" label="Remaining term (years)" value={remainingTermYears} onChange={setRemainingTermYears} />
+          <PercentField
+            id="he-interest-rate"
+            label="Interest rate"
+            value={interestRate}
+            onChange={setInterestRate}
+            step="0.01"
+            help="The interest rate on your current mortgage."
+          />
+          <NumberField
+            id="he-remaining-term"
+            label="Remaining term (years)"
+            value={remainingTermYears}
+            onChange={setRemainingTermYears}
+            help="Years left until your current mortgage is paid off."
+          />
         </div>
         <div className="mortgage-expense-grid">
           <PercentField
@@ -340,7 +359,12 @@ export function HomeEquityCalculator({ onBack }: HomeEquityCalculatorProps) {
             <dd>{currency.format(result.availableEquityAt80Percent)}</dd>
           </div>
           <div>
-            <dt>Projected equity in {yearsToProject} {yearsToProject === 1 ? 'year' : 'years'}</dt>
+            <dt>
+              <FieldLabel
+                label={`Projected equity in ${yearsToProject} ${yearsToProject === 1 ? 'year' : 'years'}`}
+                help="Estimated future home value (at your assumed appreciation rate) minus the projected remaining loan balance at that point."
+              />
+            </dt>
             <dd>{currency.format(result.projectedEquity)}</dd>
           </div>
         </div>

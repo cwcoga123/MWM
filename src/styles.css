@@ -1791,6 +1791,38 @@ body,
   color: #79c0ff !important;
 }
 
+.mortgage-pmi-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.mortgage-pmi-toggle input[type='checkbox'] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: #a371f7;
+  cursor: pointer;
+}
+
+.mortgage-pmi-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mortgage-pmi-toggle small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .mortgage-form__divider {
   height: 1px;
   background: var(--line);
@@ -2070,7 +2102,7 @@ body,
   border-top: 1px solid var(--line);
 }
 
-.amortization-summary-list > div {
+.amortization-summary-list > div:not(.amortization-summary-list__group) {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -3323,7 +3355,7 @@ body,
 .field-help {
   display: inline-flex;
   color: var(--muted);
-  cursor: help;
+  cursor: pointer;
   position: relative;
 }
 
@@ -3372,7 +3404,6 @@ body,
 .closing-cost-card {
   border: 1px solid var(--line);
   border-radius: 10px;
-  overflow: hidden;
   background: #0d1117;
 }
 

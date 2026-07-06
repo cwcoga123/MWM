@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CircleDollarSign, Printer, RotateCcw } from 'lucide-react'
+import { ArrowLeft, CircleDollarSign, HelpCircle, Printer, RotateCcw } from 'lucide-react'
 import { calculateSellerProceeds, conicGradient } from '../lib/sellerProceeds'
+import {
+  CA_CLOSING_CUSTOMS_SOURCE,
+  caClosingCustoms,
+  cityTransferTaxAmount,
+  countyCustomsFor,
+  countyTransferTaxAmount,
+  customaryShare,
+  payerLabel,
+} from '../data/caClosingCustoms'
 
 interface SellerProceedsCalculatorProps {
   onBack: () => void
@@ -16,19 +25,34 @@ function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface MoneyFieldProps {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
+  help?: string
 }
 
-function MoneyField({ id, label, value, onChange }: MoneyFieldProps) {
+function MoneyField({ id, label, value, onChange, help }: MoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -67,6 +91,33 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
   const [otherExpenses, setOtherExpenses] = useState(DEFAULTS.otherExpenses)
   const [showAdvanced, setShowAdvanced] = useState(true)
 
+  const [county, setCounty] = useState('')
+  const [city, setCity] = useState('')
+  const [transferTaxOverride, setTransferTaxOverride] = useState<number | null>(null)
+
+  const customs = county ? countyCustomsFor(county) : undefined
+  const cityTax = customs?.cityTaxes?.find((entry) => entry.city === city)
+
+  const suggestedTransferTax = useMemo(() => {
+    if (!customs) return 0
+    const countyTax = countyTransferTaxAmount(customs, salePrice)
+    const cityAmount = cityTax ? cityTransferTaxAmount(cityTax, salePrice) : 0
+    return Math.round(countyTax + customaryShare(cityTax?.payer ?? null, cityAmount, 'seller'))
+  }, [customs, cityTax, salePrice])
+
+  const transferTax = transferTaxOverride ?? suggestedTransferTax
+
+  function changeCounty(nextCounty: string) {
+    setCounty(nextCounty)
+    setCity('')
+    setTransferTaxOverride(null)
+  }
+
+  function changeCity(nextCity: string) {
+    setCity(nextCity)
+    setTransferTaxOverride(null)
+  }
+
   const result = useMemo(
     () =>
       calculateSellerProceeds({
@@ -75,6 +126,7 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
         buyerAgentFee,
         sellerAgentFee,
         titleEscrowTax,
+        transferTax,
         sellerConcessions,
         repairsPrep,
         otherExpenses,
@@ -85,6 +137,7 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
       buyerAgentFee,
       sellerAgentFee,
       titleEscrowTax,
+      transferTax,
       sellerConcessions,
       repairsPrep,
       otherExpenses,
@@ -104,6 +157,9 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
     setSellerConcessions(DEFAULTS.sellerConcessions)
     setRepairsPrep(DEFAULTS.repairsPrep)
     setOtherExpenses(DEFAULTS.otherExpenses)
+    setCounty('')
+    setCity('')
+    setTransferTaxOverride(null)
   }
 
   return (
@@ -138,14 +194,73 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
         </div>
 
         <div className="mortgage-expense-grid">
-          <MoneyField id="sp-sale-price" label="Sale price" value={salePrice} onChange={setSalePrice} />
+          <MoneyField
+            id="sp-sale-price"
+            label="Sale price"
+            value={salePrice}
+            onChange={setSalePrice}
+            help="The price the home is expected to sell for."
+          />
           <MoneyField
             id="sp-outstanding-mortgage"
             label="Outstanding mortgage balance"
             value={outstandingMortgage}
             onChange={setOutstandingMortgage}
+            help="What you still owe on the mortgage — this gets paid off from the sale proceeds at closing."
           />
         </div>
+
+        <div className="mortgage-expense-grid">
+          <label className="mortgage-field" htmlFor="sp-county">
+            <FieldLabel
+              label="California county"
+              help="Select the county to estimate the documentary transfer tax and see who customarily pays escrow, title, and transfer taxes there."
+            />
+            <span className="mortgage-select">
+              <select id="sp-county" value={county} onChange={(event) => changeCounty(event.target.value)}>
+                <option value="">Select county (optional)</option>
+                {caClosingCustoms.map((entry) => (
+                  <option value={entry.county} key={entry.county}>{entry.county}</option>
+                ))}
+              </select>
+            </span>
+          </label>
+          {customs?.cityTaxes && customs.cityTaxes.length > 0 && (
+            <label className="mortgage-field" htmlFor="sp-city">
+              <FieldLabel
+                label="City"
+                help="Some cities charge their own transfer tax on top of the county's $1.10 per $1,000. Select the city if the property is inside its limits."
+              />
+              <span className="mortgage-select">
+                <select id="sp-city" value={city} onChange={(event) => changeCity(event.target.value)}>
+                  <option value="">No city transfer tax / other city</option>
+                  {customs.cityTaxes.map((entry) => (
+                    <option value={entry.city} key={entry.city}>{entry.city}</option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          )}
+        </div>
+
+        {customs && (
+          <div className="mortgage-insight seller-proceeds-customs">
+            <p>
+              <strong>Customary practice in {customs.county} County:</strong>{' '}
+              escrow fees — {payerLabel(customs.escrow)}{customs.escrowNote ? ` (${customs.escrowNote})` : ''};{' '}
+              owner's title policy — {payerLabel(customs.title)}{customs.titleNote ? ` (${customs.titleNote})` : ''};{' '}
+              county transfer tax — {customs.countyTransferTaxPerThousand > 0
+                ? `seller pays $${customs.countyTransferTaxPerThousand.toFixed(2)} per $1,000`
+                : 'see note'}{customs.countyTaxNote ? ` (${customs.countyTaxNote})` : ''}.
+              {cityTax && (
+                <>
+                  {' '}{cityTax.city} city transfer tax — {payerLabel(cityTax.payer)}
+                  {cityTax.note ? ` (${cityTax.note})` : ''}.
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         <p className="seller-proceeds-note">
           You can increase the accuracy of this calculator by filling in additional fields.
@@ -154,14 +269,61 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
         {showAdvanced && (
           <div className="seller-proceeds-advanced">
             <div className="seller-proceeds-advanced-grid">
-              <MoneyField id="sp-buyer-agent" label="Buyer agent fee" value={buyerAgentFee} onChange={setBuyerAgentFee} />
-              <MoneyField id="sp-seller-agent" label="Seller agent fee" value={sellerAgentFee} onChange={setSellerAgentFee} />
-              <MoneyField id="sp-title-escrow" label="Title / escrow / tax" value={titleEscrowTax} onChange={setTitleEscrowTax} />
-              <MoneyField id="sp-concessions" label="Seller concessions" value={sellerConcessions} onChange={setSellerConcessions} />
+              <MoneyField
+                id="sp-buyer-agent"
+                label="Buyer agent fee"
+                value={buyerAgentFee}
+                onChange={setBuyerAgentFee}
+                help="Commission paid to the buyer's agent, customarily covered by the seller out of sale proceeds."
+              />
+              <MoneyField
+                id="sp-seller-agent"
+                label="Seller agent fee"
+                value={sellerAgentFee}
+                onChange={setSellerAgentFee}
+                help="Commission paid to your own listing agent for marketing and selling the home."
+              />
+              <MoneyField
+                id="sp-title-escrow"
+                label="Title / escrow fees"
+                value={titleEscrowTax}
+                onChange={setTitleEscrowTax}
+                help="Owner's title insurance policy and escrow/settlement fees. Who customarily pays varies by county — select a county above to see the local practice."
+              />
+              <MoneyField
+                id="sp-transfer-tax"
+                label="Transfer tax"
+                value={transferTax}
+                onChange={(value) => setTransferTaxOverride(value)}
+                help={
+                  customs
+                    ? `Auto-estimated from ${customs.county} County customs: $1.10 per $1,000 county tax${cityTax ? ` plus the seller's customary share of the ${cityTax.city} city tax` : ''}. Edit to override.`
+                    : 'Documentary transfer tax charged when the deed records. In California the county tax is $1.10 per $1,000 of price, customarily paid by the seller; some cities add their own. Select a county above to auto-estimate.'
+                }
+              />
+              <MoneyField
+                id="sp-concessions"
+                label="Seller concessions"
+                value={sellerConcessions}
+                onChange={setSellerConcessions}
+                help="Credits you agree to give the buyer — e.g. toward closing costs or repairs — negotiated as part of the deal."
+              />
             </div>
             <div className="mortgage-expense-grid">
-              <MoneyField id="sp-repairs" label="Repairs & prep" value={repairsPrep} onChange={setRepairsPrep} />
-              <MoneyField id="sp-other" label="Other expenses" value={otherExpenses} onChange={setOtherExpenses} />
+              <MoneyField
+                id="sp-repairs"
+                label="Repairs & prep"
+                value={repairsPrep}
+                onChange={setRepairsPrep}
+                help="Cost of repairs, staging, cleaning, or other work done to prepare the home for sale."
+              />
+              <MoneyField
+                id="sp-other"
+                label="Other expenses"
+                value={otherExpenses}
+                onChange={setOtherExpenses}
+                help="Any other selling costs not covered above, such as HOA transfer fees or a home warranty."
+              />
             </div>
           </div>
         )}
@@ -190,7 +352,9 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
         <div className="seller-proceeds-chart">
           <div className="seller-proceeds-donut" style={{ background: `conic-gradient(${gradient})` }}>
             <div className="seller-proceeds-donut__hole">
-              <span>Net proceeds</span>
+              <span>
+                <FieldLabel label="Net proceeds" help="What you walk away with after the mortgage payoff and all selling costs are subtracted from the sale price." />
+              </span>
               <strong>{currency.format(Math.max(0, result.netProceeds))}</strong>
             </div>
           </div>
@@ -210,7 +374,7 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
       <p className="mortgage-disclaimer">
         Results are estimates for educational purposes only and do not account for prorated
         taxes, HOA dues, or every possible closing fee. Actual net proceeds will vary by
-        transaction and location.
+        transaction and location. County customs source: {CA_CLOSING_CUSTOMS_SOURCE}
       </p>
     </main>
   )

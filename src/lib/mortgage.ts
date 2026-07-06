@@ -107,6 +107,28 @@ export const creditScores: CreditScoreOption[] = [
   { id: 'bad', label: '300-499 (Bad)', rateAdjustment: 2 },
 ]
 
+/**
+ * Annual PMI rates by credit score band.
+ * Only applies when LTV > 80% (down payment < 20%).
+ * Sources: industry averages per CFPB / Freddie Mac data.
+ */
+export const pmiRates: Record<CreditScoreId, number> = {
+  excellent: 0.0046, // 0.46% — 780–850
+  good:      0.0075, // 0.75% — 660–779
+  fair:      0.0110, // 1.10% — 600–659
+  poor:      0.0130, // 1.30% — 500–599
+  bad:       0.0150, // 1.50% — 300–499
+}
+
+/**
+ * Returns the annual PMI rate for the given credit score at the given LTV.
+ * Returns 0 when LTV ≤ 0.80 (down payment ≥ 20 %).
+ */
+export function calculatePmiRate(creditScoreId: CreditScoreId, ltv: number): number {
+  if (ltv <= 0.8) return 0
+  return pmiRates[creditScoreId] ?? 0
+}
+
 export function calculateInterestRate(
   term: LoanTermOption,
   creditScore: CreditScoreOption,

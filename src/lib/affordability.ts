@@ -2,11 +2,13 @@ export {
   loanTerms,
   creditScores,
   calculateInterestRate,
+  pmiRates,
   type LoanTermId,
   type CreditScoreId,
   type LoanTermOption,
   type CreditScoreOption,
 } from './mortgage'
+import { pmiRates } from './mortgage'
 
 /**
  * Conventional back-end debt-to-income guideline used to size "how much can
@@ -41,6 +43,8 @@ export interface AffordabilityInputs {
   annualInterestRate: number
   termYears: number
   removeMortgageInsurance: boolean
+  /** Credit score band used to select the appropriate PMI rate. */
+  creditScoreId: import('./mortgage').CreditScoreId
   /**
    * Target back-end debt-to-income ratio (0-1) driving how much home the
    * budget can support. Defaults to TARGET_DTI when omitted. Exposed so the
@@ -101,7 +105,8 @@ export function calculateAffordability(inputs: AffordabilityInputs): Affordabili
   const monthlyDebt = safeNumber(inputs.monthlyDebt)
   const downPayment = safeNumber(inputs.downPayment)
   const taxMonthlyRate = safeNumber(inputs.propertyTaxRatePercent) / 100 / 12
-  const pmiMonthlyRate = PMI_ANNUAL_RATE / 12
+  const annualPmiRate = pmiRates[inputs.creditScoreId] ?? PMI_ANNUAL_RATE
+  const pmiMonthlyRate = annualPmiRate / 12
 
   const targetDti = safeNumber(inputs.targetDti ?? TARGET_DTI)
   const grossMonthlyIncome = grossAnnualIncome / 12
@@ -111,20 +116,23 @@ export function calculateAffordability(inputs: AffordabilityInputs): Affordabili
   let affordablePrice: number
   let pmiActive: boolean
 
-  if (inputs.removeMortgageInsurance) {
+  const priceWithPmi = solveHomePrice(housingBudget, downPayment, factor, taxMonthlyRate, pmiMonthlyRate)
+  const downRatioWithPmi = priceWithPmi > 0 ? downPayment / priceWithPmi : 1
+  const wouldNeedPmi = downRatioWithPmi < PMI_DOWN_PAYMENT_THRESHOLD
+
+  if (!wouldNeedPmi) {
+    // Down payment already ≥ 20% — no PMI regardless of the toggle
     affordablePrice = solveHomePrice(housingBudget, downPayment, factor, taxMonthlyRate, 0)
     pmiActive = false
+  } else if (inputs.removeMortgageInsurance) {
+    // PMI would apply but the user opted out. Lock the price to the
+    // PMI-inclusive value so the payment DROP from removing PMI is visible
+    // (instead of being silently absorbed into a higher purchase price).
+    affordablePrice = priceWithPmi
+    pmiActive = false
   } else {
-    const priceWithPmi = solveHomePrice(housingBudget, downPayment, factor, taxMonthlyRate, pmiMonthlyRate)
-    const downRatioWithPmi = priceWithPmi > 0 ? downPayment / priceWithPmi : 1
-
-    if (downRatioWithPmi < PMI_DOWN_PAYMENT_THRESHOLD) {
-      affordablePrice = priceWithPmi
-      pmiActive = true
-    } else {
-      affordablePrice = solveHomePrice(housingBudget, downPayment, factor, taxMonthlyRate, 0)
-      pmiActive = false
-    }
+    affordablePrice = priceWithPmi
+    pmiActive = true
   }
 
   const loanAmount = Math.max(0, affordablePrice - downPayment)

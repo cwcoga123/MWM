@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react'
-import { ArrowLeft, Printer, RotateCcw, WalletCards } from 'lucide-react'
+import { ArrowLeft, HelpCircle, Printer, RotateCcw, WalletCards } from 'lucide-react'
 import {
   affordabilityZone,
   calculateAffordability,
@@ -8,6 +8,7 @@ import {
   GAUGE_MAX_DTI,
   gaugeFillPercent,
   loanTerms,
+  pmiRates,
   TARGET_DTI,
   type CreditScoreId,
   type LoanTermId,
@@ -27,19 +28,34 @@ function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface MoneyFieldProps {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
+  help?: string
 }
 
-function MoneyField({ id, label, value, onChange }: MoneyFieldProps) {
+function MoneyField({ id, label, value, onChange, help }: MoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -62,14 +78,15 @@ interface PercentFieldProps {
   value: number
   onChange: (value: number) => void
   step?: string
+  help?: string
 }
 
-function PercentField({ id, label, value, onChange, step = '0.01' }: PercentFieldProps) {
+function PercentField({ id, label, value, onChange, help }: PercentFieldProps) {
   const [rawInput, setRawInput] = useState<string | null>(null)
   const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
@@ -126,6 +143,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
         annualInterestRate: interestRate,
         termYears: loanTerm.amortizationYears,
         removeMortgageInsurance,
+        creditScoreId,
         targetDti,
       }),
     [
@@ -136,6 +154,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
       interestRate,
       loanTerm.amortizationYears,
       removeMortgageInsurance,
+      creditScoreId,
       targetDti,
     ],
   )
@@ -193,15 +212,32 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
 
           <dl className="affordability-summary-list">
             <div>
-              <dt>Estimated mortgage rate</dt>
+              <dt>
+                <FieldLabel label="Estimated mortgage rate" help="An average rate for your chosen loan term and credit score, or your custom rate if you've entered one." />
+              </dt>
               <dd>{interestRate.toFixed(3)}%<span aria-hidden="true"> *</span></dd>
             </div>
             <div>
-              <dt>Monthly payment estimate</dt>
+              <dt>
+                <FieldLabel label="Monthly payment estimate" help="Principal, interest, taxes, insurance, and PMI (if applicable) combined at the target debt-to-income ratio. This stays pinned to your budget — it's the affordable price (below) that moves with your credit score, not this total." />
+              </dt>
               <dd>{currency.format(result.totalMonthlyPayment)}</dd>
             </div>
+            {result.pmiActive && (
+              <div>
+                <dt>
+                  <FieldLabel
+                    label="Monthly PMI"
+                    help={`Private mortgage insurance, included in the total above. Estimated at ${(pmiRates[creditScoreId] * 100).toFixed(2)}%/yr for your selected credit score band — this is the line that actually moves when you change credit score, since a worse rate buys a cheaper home to hold the same total payment.`}
+                  />
+                </dt>
+                <dd>{currency.format(result.monthlyPmi)}</dd>
+              </div>
+            )}
             <div>
-              <dt>Debt to income ratio</dt>
+              <dt>
+                <FieldLabel label="Debt to income ratio" help="DTI — your monthly debt payments (including the new mortgage) divided by your gross monthly income. Lenders typically want this at 36% or below." />
+              </dt>
               <dd>{Math.round(result.debtToIncomeRatio * 100)}%</dd>
             </div>
           </dl>
@@ -247,12 +283,14 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
               label="Gross annual income"
               value={grossAnnualIncome}
               onChange={setGrossAnnualIncome}
+              help="Your total household income before taxes and deductions."
             />
             <MoneyField
               id="affordability-debt"
               label="Monthly debt"
               value={monthlyDebt}
               onChange={setMonthlyDebt}
+              help="Other required monthly payments — car loans, student loans, credit card minimums, etc. Don't include rent or the mortgage you're solving for."
             />
           </div>
 
@@ -262,17 +300,19 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
               label="Down payment"
               value={downPayment}
               onChange={setDownPayment}
+              help="Cash you plan to pay upfront toward the purchase."
             />
             <PercentField
               id="affordability-property-tax"
               label="Property tax"
               value={propertyTaxRate}
               onChange={setPropertyTaxRate}
+              help="Annual property tax rate as a percent of the home price, used to estimate your monthly escrow payment."
             />
           </div>
 
           <label className="mortgage-field" htmlFor="affordability-credit-score">
-            <span>Credit score</span>
+            <FieldLabel label="Credit score" help="Your approximate credit score range — used to estimate the interest rate you'd qualify for." />
             <span className="mortgage-select">
               <select
                 id="affordability-credit-score"
@@ -287,7 +327,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
           </label>
 
           <label className="mortgage-field" htmlFor="affordability-loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years you'd take to pay off the loan — affects both the rate estimate and the monthly payment." />
             <span className="mortgage-select">
               <select
                 id="affordability-loan-term"
@@ -308,7 +348,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
               checked={useCustomRate}
               onChange={(event) => setUseCustomRate(event.target.checked)}
             />
-            <span>Use custom interest rate</span>
+            <FieldLabel label="Use custom interest rate" help="Turn this on to enter your own rate instead of the rate estimated from your loan term and credit score." />
           </label>
 
           {useCustomRate ? (
@@ -317,10 +357,11 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
               label="Custom interest rate"
               value={customRate}
               onChange={setCustomRate}
+              help="Enter the specific rate you've been quoted or want to model."
             />
           ) : (
             <label className="mortgage-field" htmlFor="affordability-computed-rate">
-              <span>Estimated interest rate</span>
+              <FieldLabel label="Estimated interest rate" help="Automatically estimated from your selected loan term and credit score." />
               <span className="mortgage-input mortgage-input--rate">
                 <span className="mortgage-input__prefix" aria-hidden="true">%</span>
                 <input
@@ -343,7 +384,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
               checked={removeMortgageInsurance}
               onChange={(event) => setRemoveMortgageInsurance(event.target.checked)}
             />
-            <span>Remove mortgage insurance</span>
+            <FieldLabel label="Remove mortgage insurance" help="Check this to exclude PMI from the estimate, as if you already have 20% equity or your loan doesn't require it." />
           </label>
         </form>
       </section>

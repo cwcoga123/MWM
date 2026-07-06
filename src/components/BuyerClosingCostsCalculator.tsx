@@ -1,5 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { ArrowLeft, ChevronDown, ChevronUp, HelpCircle, Printer, ReceiptText, RotateCcw } from 'lucide-react'
+import {
+  CA_CLOSING_CUSTOMS_SOURCE,
+  caClosingCustoms,
+  cityTransferTaxAmount,
+  countyCustomsFor,
+  countyTransferTaxAmount,
+  customaryShare,
+  payerLabel,
+} from '../data/caClosingCustoms'
 import { loanTerms, type LoanTermId } from '../lib/mortgage'
 import {
   calculateBuyerClosingCosts,
@@ -265,6 +274,28 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
   const [showMath, setShowMath] = useState(false)
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
 
+  const [county, setCounty] = useState('')
+  const [city, setCity] = useState('')
+
+  const customs = county ? countyCustomsFor(county) : undefined
+  const cityTax = customs?.cityTaxes?.find((entry) => entry.city === city)
+
+  /** Buyer's customary share of transfer taxes per the Fidelity guide. */
+  const buyerTransferTaxShare = useMemo(() => {
+    if (!customs) return null
+    const countyTax = countyTransferTaxAmount(customs, purchasePrice)
+    // County tax is customarily seller-paid statewide; the city of Alameda splits it.
+    const buyerCountyShare = customs.county === 'Alameda' && city === 'Alameda' ? countyTax / 2 : 0
+    const cityAmount = cityTax ? cityTransferTaxAmount(cityTax, purchasePrice) : 0
+    return Math.round(buyerCountyShare + customaryShare(cityTax?.payer ?? null, cityAmount, 'buyer'))
+  }, [customs, cityTax, city, purchasePrice])
+
+  function applyCustomaryTransferTax() {
+    if (buyerTransferTaxShare === null) return
+    setCityCountyTaxOrStamps(buyerTransferTaxShare)
+    setStateTaxOrStamps(0) // California has no separate state transfer stamp.
+  }
+
   const loanTerm = loanTerms.find((term) => term.id === loanTermId) ?? loanTerms[0]
 
   const result = useMemo(
@@ -445,6 +476,8 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
     setPestInspection(100)
     setSettlementOrClosingFee(1_000)
     setSurvey(475)
+    setCounty('')
+    setCity('')
   }
 
   return (
@@ -546,6 +579,61 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
           />
         </div>
 
+        <div className="mortgage-expense-grid">
+          <label className="mortgage-field" htmlFor="bcc-county">
+            <FieldLabel
+              label="California county"
+              help="Select the county to see who customarily pays escrow, title, and transfer taxes there, and to estimate your share of the transfer tax."
+            />
+            <span className="mortgage-select">
+              <select id="bcc-county" value={county} onChange={(event) => { setCounty(event.target.value); setCity('') }}>
+                <option value="">Select county (optional)</option>
+                {caClosingCustoms.map((entry) => (
+                  <option value={entry.county} key={entry.county}>{entry.county}</option>
+                ))}
+              </select>
+            </span>
+          </label>
+          {customs?.cityTaxes && customs.cityTaxes.length > 0 && (
+            <label className="mortgage-field" htmlFor="bcc-city">
+              <FieldLabel
+                label="City"
+                help="Some cities charge their own transfer tax on top of the county's. Select the city if the property is inside its limits."
+              />
+              <span className="mortgage-select">
+                <select id="bcc-city" value={city} onChange={(event) => setCity(event.target.value)}>
+                  <option value="">No city transfer tax / other city</option>
+                  {customs.cityTaxes.map((entry) => (
+                    <option value={entry.city} key={entry.city}>{entry.city}</option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          )}
+        </div>
+
+        {customs && (
+          <div className="mortgage-insight buyer-closing-costs-customs">
+            <p>
+              <strong>Customary practice in {customs.county} County:</strong>{' '}
+              escrow fees — {payerLabel(customs.escrow)}{customs.escrowNote ? ` (${customs.escrowNote})` : ''};{' '}
+              owner's title policy — {payerLabel(customs.title)}{customs.titleNote ? ` (${customs.titleNote})` : ''};{' '}
+              county transfer tax — customarily seller-paid{customs.countyTaxNote ? ` (${customs.countyTaxNote})` : ''}.
+              {cityTax && (
+                <>
+                  {' '}{cityTax.city} city transfer tax — {payerLabel(cityTax.payer)}
+                  {cityTax.note ? ` (${cityTax.note})` : ''}.
+                </>
+              )}{' '}
+              Your customary share of transfer taxes as the buyer:{' '}
+              <strong>{currency.format(buyerTransferTaxShare ?? 0)}</strong>.{' '}
+              <button type="button" className="seller-proceeds-toggle" onClick={applyCustomaryTransferTax}>
+                Apply to government fees
+              </button>
+            </p>
+          </div>
+        )}
+
         <p className="seller-proceeds-note">
           You can increase the accuracy of this calculator by filling in additional fields.
         </p>
@@ -564,7 +652,7 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               </div>
               <div className="mortgage-expense-grid">
                 <label className="mortgage-field" htmlFor="bcc-loan-term">
-                  <FieldLabel label="Loan term" />
+                  <FieldLabel label="Loan term" help="How many years you'll take to pay off the loan — 30-year fixed is most common." />
                   <span className="mortgage-select">
                     <select id="bcc-loan-term" value={loanTermId} onChange={(event) => setLoanTermId(event.target.value as LoanTermId)}>
                       {loanTerms.map((term) => (
@@ -598,12 +686,36 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
                 />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-homeowners-insurance" label="Annual homeowner's insurance" value={annualHomeownersInsurance} onChange={setAnnualHomeownersInsurance} />
-                <MoneyField id="bcc-additional-insurance" label="Annual additional insurance" value={annualAdditionalInsurance} onChange={setAnnualAdditionalInsurance} />
+                <MoneyField
+                  id="bcc-homeowners-insurance"
+                  label="Annual homeowner's insurance"
+                  value={annualHomeownersInsurance}
+                  onChange={setAnnualHomeownersInsurance}
+                  help="Yearly hazard insurance premium. The lender typically collects a prorated portion at closing to fund your escrow account."
+                />
+                <MoneyField
+                  id="bcc-additional-insurance"
+                  label="Annual additional insurance"
+                  value={annualAdditionalInsurance}
+                  onChange={setAnnualAdditionalInsurance}
+                  help="Any extra required coverage, such as flood or earthquake insurance, billed yearly."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-property-tax" label="Annual property tax" value={annualPropertyTax} onChange={setAnnualPropertyTax} />
-                <MoneyField id="bcc-hoa-dues" label="Monthly association dues" value={monthlyAssociationDues} onChange={setMonthlyAssociationDues} />
+                <MoneyField
+                  id="bcc-property-tax"
+                  label="Annual property tax"
+                  value={annualPropertyTax}
+                  onChange={setAnnualPropertyTax}
+                  help="Yearly property tax billed by the county, prorated and collected into escrow at closing."
+                />
+                <MoneyField
+                  id="bcc-hoa-dues"
+                  label="Monthly association dues"
+                  value={monthlyAssociationDues}
+                  onChange={setMonthlyAssociationDues}
+                  help="Homeowners association dues, if the property has them. Enter 0 if none."
+                />
               </div>
               <NumberField id="bcc-escrow-months" label="Months of escrow" value={monthsOfEscrow} onChange={setMonthsOfEscrow} help="How many months of insurance and tax the lender collects upfront." />
             </ClosingCostSection>
@@ -641,12 +753,30 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               onToggle={() => toggleSection('credits')}
             >
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-closing-costs-by-seller" label="Closing costs paid by seller" value={closingCostsPaidBySeller} onChange={setClosingCostsPaidBySeller} />
-                <MoneyField id="bcc-commitment-fee" label="Commitment fee" value={commitmentFee} onChange={setCommitmentFee} />
+                <MoneyField
+                  id="bcc-closing-costs-by-seller"
+                  label="Closing costs paid by seller"
+                  value={closingCostsPaidBySeller}
+                  onChange={setClosingCostsPaidBySeller}
+                  help="Seller-paid credit toward your closing costs, as negotiated in the purchase contract."
+                />
+                <MoneyField
+                  id="bcc-commitment-fee"
+                  label="Commitment fee"
+                  value={commitmentFee}
+                  onChange={setCommitmentFee}
+                  help="A fee some lenders charge to lock in your loan terms — credited here if it's being refunded or offset."
+                />
               </div>
               <div className="mortgage-expense-grid">
                 <MoneyField id="bcc-earnest-deposit" label="Earnest deposit" value={earnestDeposit} onChange={setEarnestDeposit} help="Your good-faith deposit, credited back at closing." />
-                <MoneyField id="bcc-other-credits" label="Other credits" value={otherCredits} onChange={setOtherCredits} />
+                <MoneyField
+                  id="bcc-other-credits"
+                  label="Other credits"
+                  value={otherCredits}
+                  onChange={setOtherCredits}
+                  help="Any other credits reducing your cash due at closing, such as a lender or builder credit."
+                />
               </div>
               <div className="mortgage-expense-grid">
                 <PercentField
@@ -668,20 +798,68 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               onToggle={() => toggleSection('loan-costs')}
             >
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-application-fee" label="Application fee" value={applicationFee} onChange={setApplicationFee} />
-                <MoneyField id="bcc-appraisal-fee" label="Appraisal fee" value={appraisalFee} onChange={setAppraisalFee} />
+                <MoneyField
+                  id="bcc-application-fee"
+                  label="Application fee"
+                  value={applicationFee}
+                  onChange={setApplicationFee}
+                  help="What the lender charges to process your loan application."
+                />
+                <MoneyField
+                  id="bcc-appraisal-fee"
+                  label="Appraisal fee"
+                  value={appraisalFee}
+                  onChange={setAppraisalFee}
+                  help="Cost of the independent appraisal the lender requires to confirm the home's value."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-assumption-fee" label="Assumption fee" value={assumptionFee} onChange={setAssumptionFee} />
-                <MoneyField id="bcc-credit-report" label="Credit report" value={creditReport} onChange={setCreditReport} />
+                <MoneyField
+                  id="bcc-assumption-fee"
+                  label="Assumption fee"
+                  value={assumptionFee}
+                  onChange={setAssumptionFee}
+                  help="Charged only if you're assuming the seller's existing mortgage instead of getting a new loan. Usually $0."
+                />
+                <MoneyField
+                  id="bcc-credit-report"
+                  label="Credit report"
+                  value={creditReport}
+                  onChange={setCreditReport}
+                  help="Fee for the lender to pull your credit report and score."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-lenders-attorney-fee" label="Lender's attorney fee" value={lendersAttorneyFee} onChange={setLendersAttorneyFee} />
-                <MoneyField id="bcc-lenders-inspection-fee" label="Lender's inspection fee" value={lendersInspectionFee} onChange={setLendersInspectionFee} />
+                <MoneyField
+                  id="bcc-lenders-attorney-fee"
+                  label="Lender's attorney fee"
+                  value={lendersAttorneyFee}
+                  onChange={setLendersAttorneyFee}
+                  help="Legal fee for the attorney who prepares the lender's loan documents."
+                />
+                <MoneyField
+                  id="bcc-lenders-inspection-fee"
+                  label="Lender's inspection fee"
+                  value={lendersInspectionFee}
+                  onChange={setLendersInspectionFee}
+                  help="Cost of any inspection the lender requires beyond the appraisal, such as a final walkthrough for new construction."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-origination-fee" label="Origination fee" value={originationFee} onChange={setOriginationFee} />
-                <MoneyField id="bcc-other-loan-costs" label="Other loan costs" value={otherLoanCosts} onChange={setOtherLoanCosts} />
+                <MoneyField
+                  id="bcc-origination-fee"
+                  label="Origination fee"
+                  value={originationFee}
+                  onChange={setOriginationFee}
+                  help="What the lender charges to originate and underwrite the loan, often expressed as a percent of the loan amount."
+                />
+                <MoneyField
+                  id="bcc-other-loan-costs"
+                  label="Other loan costs"
+                  value={otherLoanCosts}
+                  onChange={setOtherLoanCosts}
+                  help="Any other lender fees not itemized above."
+                />
               </div>
               <PercentField
                 id="bcc-points-by-buyer"
@@ -700,18 +878,60 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               onToggle={() => toggleSection('title-charges')}
             >
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-abstract-title-search" label="Abstract or title search" value={abstractOrTitleSearch} onChange={setAbstractOrTitleSearch} />
-                <MoneyField id="bcc-attorneys-fees" label="Attorney's fees" value={attorneysFees} onChange={setAttorneysFees} />
+                <MoneyField
+                  id="bcc-abstract-title-search"
+                  label="Abstract or title search"
+                  value={abstractOrTitleSearch}
+                  onChange={setAbstractOrTitleSearch}
+                  help="Cost of researching the property's ownership history to confirm the title is clear."
+                />
+                <MoneyField
+                  id="bcc-attorneys-fees"
+                  label="Attorney's fees"
+                  value={attorneysFees}
+                  onChange={setAttorneysFees}
+                  help="Legal fees for an attorney representing you in the transaction, where required or requested."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-document-preparation" label="Document preparation" value={documentPreparation} onChange={setDocumentPreparation} />
-                <MoneyField id="bcc-notary-fees" label="Notary fees" value={notaryFees} onChange={setNotaryFees} />
+                <MoneyField
+                  id="bcc-document-preparation"
+                  label="Document preparation"
+                  value={documentPreparation}
+                  onChange={setDocumentPreparation}
+                  help="Fee for preparing the closing documents and deed."
+                />
+                <MoneyField
+                  id="bcc-notary-fees"
+                  label="Notary fees"
+                  value={notaryFees}
+                  onChange={setNotaryFees}
+                  help="Cost to have closing documents notarized."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-other-title-fees" label="Other fees" value={otherTitleFees} onChange={setOtherTitleFees} />
-                <MoneyField id="bcc-title-examination" label="Title examination" value={titleExamination} onChange={setTitleExamination} />
+                <MoneyField
+                  id="bcc-other-title-fees"
+                  label="Other fees"
+                  value={otherTitleFees}
+                  onChange={setOtherTitleFees}
+                  help="Any other title-related charges not itemized above."
+                />
+                <MoneyField
+                  id="bcc-title-examination"
+                  label="Title examination"
+                  value={titleExamination}
+                  onChange={setTitleExamination}
+                  help="Fee for a title company or attorney to review the abstract and confirm there are no liens or ownership disputes."
+                />
               </div>
-              <MoneyField id="bcc-title-insurance" label="Title insurance" value={titleInsurance} onChange={setTitleInsurance} />
+              <MoneyField
+                id="bcc-title-insurance"
+                label="Title insurance"
+                value={titleInsurance}
+                onChange={setTitleInsurance}
+                help="One-time premium for lender's (and often owner's) title insurance, protecting against title defects discovered after closing."
+              />
             </ClosingCostSection>
 
             <ClosingCostSection
@@ -721,12 +941,36 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               onToggle={() => toggleSection('government')}
             >
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-city-county-tax" label="City/county tax or stamps" value={cityCountyTaxOrStamps} onChange={setCityCountyTaxOrStamps} />
-                <MoneyField id="bcc-other-gov-fees" label="Other government fees" value={otherGovernmentFees} onChange={setOtherGovernmentFees} />
+                <MoneyField
+                  id="bcc-city-county-tax"
+                  label="City/county tax or stamps"
+                  value={cityCountyTaxOrStamps}
+                  onChange={setCityCountyTaxOrStamps}
+                  help="Documentary transfer taxes. In California the county tax ($1.10 per $1,000) is customarily paid by the seller; city taxes vary — select a county above to estimate your customary share."
+                />
+                <MoneyField
+                  id="bcc-other-gov-fees"
+                  label="Other government fees"
+                  value={otherGovernmentFees}
+                  onChange={setOtherGovernmentFees}
+                  help="Any other municipal or county fees not itemized above."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-recording-fees" label="Recording fees" value={recordingFees} onChange={setRecordingFees} />
-                <MoneyField id="bcc-state-tax" label="State tax or stamps" value={stateTaxOrStamps} onChange={setStateTaxOrStamps} />
+                <MoneyField
+                  id="bcc-recording-fees"
+                  label="Recording fees"
+                  value={recordingFees}
+                  onChange={setRecordingFees}
+                  help="Charged by the county to officially record the deed and mortgage in public records."
+                />
+                <MoneyField
+                  id="bcc-state-tax"
+                  label="State tax or stamps"
+                  value={stateTaxOrStamps}
+                  onChange={setStateTaxOrStamps}
+                  help="California has no separate state transfer stamp — transfer taxes are levied at the county and city level. Leave 0 for CA purchases."
+                />
               </div>
             </ClosingCostSection>
 
@@ -737,16 +981,52 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
               onToggle={() => toggleSection('additional')}
             >
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-flood-determination" label="Flood determination fee" value={floodDeterminationFee} onChange={setFloodDeterminationFee} />
-                <MoneyField id="bcc-mortgage-broker" label="Mortgage broker fees" value={mortgageBrokerFees} onChange={setMortgageBrokerFees} />
+                <MoneyField
+                  id="bcc-flood-determination"
+                  label="Flood determination fee"
+                  value={floodDeterminationFee}
+                  onChange={setFloodDeterminationFee}
+                  help="Cost to determine whether the property sits in a FEMA flood zone, which affects whether flood insurance is required."
+                />
+                <MoneyField
+                  id="bcc-mortgage-broker"
+                  label="Mortgage broker fees"
+                  value={mortgageBrokerFees}
+                  onChange={setMortgageBrokerFees}
+                  help="Fee paid to a mortgage broker, if you used one to shop and arrange your loan."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-other-cost" label="Other" value={otherAdditionalCosts} onChange={setOtherAdditionalCosts} />
-                <MoneyField id="bcc-pest-inspection" label="Pest inspection" value={pestInspection} onChange={setPestInspection} />
+                <MoneyField
+                  id="bcc-other-cost"
+                  label="Other"
+                  value={otherAdditionalCosts}
+                  onChange={setOtherAdditionalCosts}
+                  help="Any other closing cost not itemized elsewhere in this calculator."
+                />
+                <MoneyField
+                  id="bcc-pest-inspection"
+                  label="Pest inspection"
+                  value={pestInspection}
+                  onChange={setPestInspection}
+                  help="Cost of the termite/pest inspection some lenders or states require."
+                />
               </div>
               <div className="mortgage-expense-grid">
-                <MoneyField id="bcc-settlement-fee" label="Settlement or closing fee" value={settlementOrClosingFee} onChange={setSettlementOrClosingFee} />
-                <MoneyField id="bcc-survey" label="Survey" value={survey} onChange={setSurvey} />
+                <MoneyField
+                  id="bcc-settlement-fee"
+                  label="Settlement or closing fee"
+                  value={settlementOrClosingFee}
+                  onChange={setSettlementOrClosingFee}
+                  help="What the title or escrow company charges to conduct and administer the closing."
+                />
+                <MoneyField
+                  id="bcc-survey"
+                  label="Survey"
+                  value={survey}
+                  onChange={setSurvey}
+                  help="Cost of a property survey confirming boundaries, easements, and encroachments."
+                />
               </div>
             </ClosingCostSection>
           </div>
@@ -765,11 +1045,15 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
           <h3>Here's what we've calculated for you</h3>
           <div className="buyer-closing-costs-totals">
             <div>
-              <span>Total costs</span>
+              <span>
+                <FieldLabel label="Total costs" help="Sum of every closing cost line item above: mortgage closing details, loan costs, title charges, government fees, and additional costs." />
+              </span>
               <strong>{currency.format(result.totalCosts)}</strong>
             </div>
             <div>
-              <span>Total credits</span>
+              <span>
+                <FieldLabel label="Total credits" help="Sum of everything reducing your cash to close: seller-paid costs, earnest deposit, other credits, and seller-paid points." />
+              </span>
               <strong>{currency.format(result.totalCredits)}</strong>
             </div>
           </div>
@@ -787,7 +1071,9 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
         <div className="seller-proceeds-chart">
           <div className="seller-proceeds-donut" style={{ background: `conic-gradient(${gradient})` }}>
             <div className="seller-proceeds-donut__hole">
-              <span>Total costs</span>
+              <span>
+                <FieldLabel label="Total costs" help="Sum of every closing cost line item: mortgage closing details, loan costs, title charges, government fees, and additional costs." />
+              </span>
               <strong>{currency.format(result.totalCosts)}</strong>
             </div>
           </div>
@@ -807,7 +1093,7 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
       <p className="mortgage-disclaimer">
         * Rates shown are for comparison only and are an average of the rates taken from
         multiple lenders and do not include all costs of borrowing. Actual rates and terms will
-        vary.
+        vary. County customs source: {CA_CLOSING_CUSTOMS_SOURCE}
       </p>
     </main>
   )

@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ChartNoAxesCombined,
   Download,
+  HelpCircle,
   Printer,
   RotateCcw,
   Sparkles,
@@ -51,20 +52,35 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 interface MoneyFieldProps {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
   suffix?: string
+  help?: string
 }
 
-function MoneyField({ id, label, value, onChange, suffix }: MoneyFieldProps) {
+function MoneyField({ id, label, value, onChange, suffix, help }: MoneyFieldProps) {
   const [focused, setFocused] = useState(false)
   const displayValue = focused ? (value === 0 ? '' : String(value)) : (value === 0 ? '' : value.toLocaleString('en-US'))
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">$</span>
         <input
@@ -87,14 +103,15 @@ interface PercentFieldProps {
   label: string
   value: number
   onChange: (value: number) => void
+  help?: string
 }
 
-function PercentField({ id, label, value, onChange }: PercentFieldProps) {
+function PercentField({ id, label, value, onChange, help }: PercentFieldProps) {
   const [rawInput, setRawInput] = useState<string | null>(null)
   const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
@@ -123,12 +140,13 @@ interface DateFieldProps {
   label: string
   value: string
   onChange: (value: string) => void
+  help?: string
 }
 
-function DateField({ id, label, value, onChange }: DateFieldProps) {
+function DateField({ id, label, value, onChange, help }: DateFieldProps) {
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <input
           id={id}
@@ -378,55 +396,79 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
 
           <dl className="amortization-summary-list">
             <div>
-              <dt>Time elapsed</dt>
+              <dt>
+                <FieldLabel label="Time elapsed" help="How much of the loan term has passed given the start date you entered." />
+              </dt>
               <dd>{formatElapsedDuration(summary.timeElapsedMonths)}</dd>
             </div>
             <div>
-              <dt>Monthly P+I</dt>
+              <dt>
+                <FieldLabel label="Monthly P+I" help="Principal and interest only — the base mortgage payment, excluding taxes, insurance, HOA, and PMI." />
+              </dt>
               <dd>{currency.format(summary.monthlyPrincipalAndInterest)}/month</dd>
             </div>
             <div>
-              <dt>Total monthly payment</dt>
+              <dt>
+                <FieldLabel label="Total monthly payment" help="Principal, interest, taxes, insurance, HOA, and PMI (if included) combined." />
+              </dt>
               <dd>{currency.format(summary.totalMonthlyPayment)}/month</dd>
             </div>
             <div>
-              <dt>Principal paid</dt>
+              <dt>
+                <FieldLabel label="Principal paid" help="Total amount paid toward the loan balance so far (or over the full schedule shown)." />
+              </dt>
               <dd>{currency.format(summary.principalPaid)}</dd>
             </div>
             <div>
-              <dt>Interest paid</dt>
+              <dt>
+                <FieldLabel label="Interest paid" help="Total interest paid to the lender so far (or over the full schedule shown)." />
+              </dt>
               <dd>{currency.format(summary.interestPaid)}</dd>
             </div>
             <div className="amortization-summary-list__group">
               <div>
-                <dt>Other expenses</dt>
+                <dt>
+                  <FieldLabel label="Other expenses" help="HOA, property taxes, insurance, and PMI combined — everything besides principal and interest." />
+                </dt>
                 <dd>{currency.format(summary.otherExpensesPaid)}</dd>
               </div>
               <div className="amortization-summary-list__sub">
-                <span>HOA</span>
+                <span>
+                  <FieldLabel label="HOA" help="Homeowners association dues paid over the period shown." />
+                </span>
                 <span>{currency.format(summary.hoaPaid)}</span>
               </div>
               <div className="amortization-summary-list__sub">
-                <span>Property taxes</span>
+                <span>
+                  <FieldLabel label="Property taxes" help="Property taxes paid over the period shown." />
+                </span>
                 <span>{currency.format(summary.propertyTaxPaid)}</span>
               </div>
               <div className="amortization-summary-list__sub">
-                <span>Insurance</span>
+                <span>
+                  <FieldLabel label="Insurance" help="Homeowner's insurance premiums paid over the period shown." />
+                </span>
                 <span>{currency.format(summary.insurancePaid)}</span>
               </div>
               {includePmi && (
                 <div className="amortization-summary-list__sub">
-                  <span>PMI</span>
+                  <span>
+                    <FieldLabel label="PMI" help="Private mortgage insurance paid while required — typically until the balance reaches 80% of the original loan amount." />
+                  </span>
                   <span>{currency.format(summary.pmiPaid)}</span>
                 </div>
               )}
             </div>
             <div>
-              <dt>Balance remaining</dt>
+              <dt>
+                <FieldLabel label="Balance remaining" help="How much principal is still owed at the end of the period shown." />
+              </dt>
               <dd>{currency.format(summary.balanceRemaining)}</dd>
             </div>
             <div>
-              <dt>Payoff date</dt>
+              <dt>
+                <FieldLabel label="Payoff date" help="The month the loan is projected to be fully paid off, based on your payment schedule and any extra payments." />
+              </dt>
               <dd>{summary.payoffDate ? monthYear.format(summary.payoffDate) : '—'}</dd>
             </div>
           </dl>
@@ -449,10 +491,16 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
             <h2>Adjust your estimate</h2>
           </div>
 
-          <MoneyField id="amort-loan-amount" label="Loan amount" value={loanAmount} onChange={setLoanAmount} />
+          <MoneyField
+            id="amort-loan-amount"
+            label="Loan amount"
+            value={loanAmount}
+            onChange={setLoanAmount}
+            help="The starting principal balance of the loan you're scheduling."
+          />
 
           <label className="mortgage-field" htmlFor="amort-loan-term">
-            <span>Loan term</span>
+            <FieldLabel label="Loan term" help="How many years the loan is scheduled over — determines the pace of amortization." />
             <span className="mortgage-select">
               <select
                 id="amort-loan-term"
@@ -466,11 +514,29 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
             </span>
           </label>
 
-          <PercentField id="amort-interest-rate" label="Interest rate *" value={interestRate} onChange={setInterestRate} />
+          <PercentField
+            id="amort-interest-rate"
+            label="Interest rate *"
+            value={interestRate}
+            onChange={setInterestRate}
+            help="The loan's annual interest rate."
+          />
 
-          <DateField id="amort-start-date" label="Start date" value={startDate} onChange={setStartDate} />
+          <DateField
+            id="amort-start-date"
+            label="Start date"
+            value={startDate}
+            onChange={setStartDate}
+            help="The date of the first payment, used to build the schedule's dates."
+          />
 
-          <MoneyField id="amort-hoa" label="HOA (Annual)" value={annualHoa} onChange={setAnnualHoa} />
+          <MoneyField
+            id="amort-hoa"
+            label="HOA (Annual)"
+            value={annualHoa}
+            onChange={setAnnualHoa}
+            help="Yearly homeowners association dues, if any. Enter 0 if none."
+          />
 
           <div className="mortgage-expense-grid">
             <MoneyField
@@ -478,12 +544,14 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
               label="Property taxes (Annual)"
               value={annualPropertyTax}
               onChange={setAnnualPropertyTax}
+              help="Yearly property tax billed by the county."
             />
             <MoneyField
               id="amort-insurance"
               label="Insurance (Annual)"
               value={annualInsurance}
               onChange={setAnnualInsurance}
+              help="Yearly homeowner's insurance premium."
             />
           </div>
 
@@ -494,7 +562,9 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
               onChange={(event) => setIncludePmi(event.target.checked)}
             />
             <span>
-              <strong>Include PMI</strong>
+              <strong>
+                <FieldLabel label="Include PMI" help="Adds private mortgage insurance to the schedule and totals — relevant if your down payment is under 20%." />
+              </strong>
               <small>
                 PMI applies for the first 5 years of the loan, or until the balance drops to 80%
                 of the original loan amount — whichever happens first.
@@ -509,6 +579,7 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
             label="Additional monthly"
             value={additionalMonthly}
             onChange={setAdditionalMonthly}
+            help="Extra amount paid toward principal every month, on top of the required payment. Speeds up payoff and reduces total interest."
           />
 
           <div className="amortization-interval-grid">
@@ -517,15 +588,17 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
               label="Interval payment(s)"
               value={intervalPayment}
               onChange={setIntervalPayment}
+              help="A recurring or one-time extra principal payment, applied at the frequency you choose below."
             />
             <DateField
               id="amort-interval-initial-date"
               label="Initial payment"
               value={intervalInitialDate}
               onChange={setIntervalInitialDate}
+              help="The date the first interval payment is applied."
             />
             <label className="mortgage-field" htmlFor="amort-interval-frequency">
-              <span>Frequency</span>
+              <FieldLabel label="Frequency" help="How often the interval payment repeats — one-time, monthly, quarterly, or annually." />
               <span className="mortgage-select">
                 <select
                   id="amort-interval-frequency"
@@ -573,12 +646,24 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
               <table className="amortization-table">
                 <thead>
                   <tr>
-                    <th>Payment date</th>
-                    <th>Payment</th>
-                    <th>Principal portion</th>
-                    <th>Interest portion</th>
-                    <th>Total interest paid</th>
-                    <th>Balance</th>
+                    <th>
+                      <FieldLabel label="Payment date" help="The month this scheduled payment is due." />
+                    </th>
+                    <th>
+                      <FieldLabel label="Payment" help="Total payment amount for this period, including any extra principal payments." />
+                    </th>
+                    <th>
+                      <FieldLabel label="Principal portion" help="The part of this payment that reduces the loan balance." />
+                    </th>
+                    <th>
+                      <FieldLabel label="Interest portion" help="The part of this payment that goes to the lender as interest." />
+                    </th>
+                    <th>
+                      <FieldLabel label="Total interest paid" help="Cumulative interest paid from the start of the loan through this payment." />
+                    </th>
+                    <th>
+                      <FieldLabel label="Balance" help="Remaining loan balance after this payment is applied." />
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

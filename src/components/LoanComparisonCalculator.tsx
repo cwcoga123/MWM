@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, Columns3, Printer, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Columns3, HelpCircle, Printer, RotateCcw } from 'lucide-react'
 import {
   calculateComparisonLoan,
   comparisonDownPaymentAmount,
@@ -62,6 +62,20 @@ function resultDifferenceLabel(value1: number, value2: number) {
   return value1 < value2 ? 'Loan 1 is lower' : 'Loan 2 is lower'
 }
 
+function FieldLabel({ label, help }: { label: string; help?: string }) {
+  return (
+    <span className="field-label">
+      {label}
+      {help && (
+        <span className="field-help" aria-label={help}>
+          <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
   const idPrefix = `comparison-loan-${number}`
   const downPaymentAmount = comparisonDownPaymentAmount(loan)
@@ -92,7 +106,7 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
       <legend>Loan {number}</legend>
 
       <label className="mortgage-field" htmlFor={`${idPrefix}-price`}>
-        <span>Home price</span>
+        <FieldLabel label="Home price" help="The purchase price for this loan scenario." />
         <span className="mortgage-input">
           <span className="mortgage-input__prefix" aria-hidden="true">$</span>
           <input
@@ -108,7 +122,9 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
       </label>
 
       <fieldset className="mortgage-down-payment">
-        <legend>Down payment</legend>
+        <legend>
+          <FieldLabel label="Down payment" help="Cash paid upfront toward this loan scenario, in dollars or as a percent of the home price." />
+        </legend>
         <div className="mortgage-down-payment__row">
           <span className="mortgage-input">
             <span className="mortgage-input__prefix" aria-hidden="true">
@@ -148,7 +164,7 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
       </fieldset>
 
       <label className="mortgage-field" htmlFor={`${idPrefix}-term`}>
-        <span>Loan term</span>
+        <FieldLabel label="Loan term" help="How many years to pay off this loan scenario. Choosing an ARM applies the adjustable-rate assumptions noted below the results." />
         <span className="mortgage-select">
           <select
             id={`${idPrefix}-term`}
@@ -163,7 +179,7 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
       </label>
 
       <label className="mortgage-field" htmlFor={`${idPrefix}-rate`}>
-        <span>Annual interest rate *</span>
+        <FieldLabel label="Annual interest rate *" help="The interest rate for this loan scenario, for comparison purposes." />
         <span className="mortgage-input">
           <input
             id={`${idPrefix}-rate`}
@@ -193,16 +209,20 @@ function ComparisonMetric({
   description,
   value1,
   value2,
+  help,
 }: {
   title: string
   description?: string
   value1: number
   value2: number
+  help?: string
 }) {
   return (
     <section className="loan-comparison__metric">
       <header>
-        <h3>{title}</h3>
+        <h3>
+          <FieldLabel label={title} help={help} />
+        </h3>
         {description && <p>{description}</p>}
       </header>
       <div className="loan-comparison__metric-grid">
@@ -307,18 +327,21 @@ export function LoanComparisonCalculator({ onBack }: LoanComparisonCalculatorPro
             title="Monthly payment"
             value1={results.loan1.monthlyPayment}
             value2={results.loan2.monthlyPayment}
+            help="Principal and interest only for each scenario — taxes, insurance, and HOA aren't included in this comparison."
           />
           <ComparisonMetric
             title="Total interest paid"
             description="Over the life of the loan"
             value1={results.loan1.totalInterest}
             value2={results.loan2.totalInterest}
+            help="The sum of every interest payment from now until each loan is fully paid off."
           />
           <ComparisonMetric
             title="Total cost of the loan"
             description="Principal plus interest"
             value1={results.loan1.totalCost}
             value2={results.loan2.totalCost}
+            help="The full amount you'll pay over the life of each loan — original principal plus all interest."
           />
 
           <aside className="loan-comparison__arm-note">

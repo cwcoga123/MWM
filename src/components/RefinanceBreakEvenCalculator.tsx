@@ -76,17 +76,19 @@ function PercentField({
   label,
   value,
   onChange,
+  help,
 }: {
   id: string
   label: string
   value: number
   onChange: (value: number) => void
+  help?: string
 }) {
   const [rawInput, setRawInput] = useState<string | null>(null)
   const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
-      <span>{label}</span>
+      <FieldLabel label={label} help={help} />
       <span className="mortgage-input">
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
@@ -265,8 +267,20 @@ export function RefinanceBreakEvenCalculator({ onBack }: RefinanceBreakEvenCalcu
 
       <section className="seller-proceeds-panel refinance-break-even-panel">
         <div className="mortgage-expense-grid">
-          <MoneyField id="rbe-current-balance" label="Current loan balance" value={currentLoanBalance} onChange={setCurrentLoanBalance} />
-          <PercentField id="rbe-current-rate" label="Current interest rate" value={currentInterestRate} onChange={setCurrentInterestRate} />
+          <MoneyField
+            id="rbe-current-balance"
+            label="Current loan balance"
+            value={currentLoanBalance}
+            onChange={setCurrentLoanBalance}
+            help="The remaining principal balance on your existing mortgage today."
+          />
+          <PercentField
+            id="rbe-current-rate"
+            label="Current interest rate"
+            value={currentInterestRate}
+            onChange={setCurrentInterestRate}
+            help="The interest rate on your existing mortgage."
+          />
         </div>
         <div className="mortgage-expense-grid">
           <NumberField
@@ -276,7 +290,13 @@ export function RefinanceBreakEvenCalculator({ onBack }: RefinanceBreakEvenCalcu
             onChange={setCurrentRemainingTermYears}
             help="Years left until your current mortgage is paid off. E.g., 3 years into a 30-year loan = 27 remaining."
           />
-          <PercentField id="rbe-new-rate" label="New interest rate" value={newInterestRate} onChange={setNewInterestRate} />
+          <PercentField
+            id="rbe-new-rate"
+            label="New interest rate"
+            value={newInterestRate}
+            onChange={setNewInterestRate}
+            help="The interest rate you'd get on the new refinanced loan."
+          />
         </div>
         <div className="mortgage-expense-grid">
           <NumberField
@@ -306,11 +326,15 @@ export function RefinanceBreakEvenCalculator({ onBack }: RefinanceBreakEvenCalcu
 
         <div className="amortization-summary-list refinance-break-even-summary">
           <div>
-            <dt>Current monthly payment</dt>
+            <dt>
+              <FieldLabel label="Current monthly payment" help="Principal & interest on your existing mortgage at its current balance, rate, and remaining term." />
+            </dt>
             <dd>{preciseCurrency.format(result.currentMonthlyPI)}</dd>
           </div>
           <div>
-            <dt>New monthly payment</dt>
+            <dt>
+              <FieldLabel label="New monthly payment" help="Principal & interest on the proposed new loan, including any cash-out amount added to the balance." />
+            </dt>
             <dd>{preciseCurrency.format(result.newMonthlyPI)}</dd>
           </div>
           <div>

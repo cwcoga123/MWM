@@ -4,6 +4,8 @@ export interface SellerProceedsInputs {
   buyerAgentFee: number
   sellerAgentFee: number
   titleEscrowTax: number
+  /** Documentary transfer tax (county + city), tracked separately from title/escrow fees. */
+  transferTax: number
   sellerConcessions: number
   repairsPrep: number
   otherExpenses: number
@@ -38,6 +40,7 @@ export function calculateSellerProceeds(inputs: SellerProceedsInputs): SellerPro
   const buyerAgentFee = safeNumber(inputs.buyerAgentFee)
   const sellerAgentFee = safeNumber(inputs.sellerAgentFee)
   const titleEscrowTax = safeNumber(inputs.titleEscrowTax)
+  const transferTax = safeNumber(inputs.transferTax)
   const sellerConcessions = safeNumber(inputs.sellerConcessions)
   const repairsPrep = safeNumber(inputs.repairsPrep)
   const otherExpenses = safeNumber(inputs.otherExpenses)
@@ -47,6 +50,7 @@ export function calculateSellerProceeds(inputs: SellerProceedsInputs): SellerPro
     buyerAgentFee +
     sellerAgentFee +
     titleEscrowTax +
+    transferTax +
     sellerConcessions +
     repairsPrep +
     otherExpenses
@@ -58,7 +62,8 @@ export function calculateSellerProceeds(inputs: SellerProceedsInputs): SellerPro
     { id: 'mortgage', label: 'Outstanding mortgage', amount: outstandingMortgage, color: '#2f81f7' },
     { id: 'buyer-agent', label: 'Buyer agent fee', amount: buyerAgentFee, color: '#f0883e' },
     { id: 'seller-agent', label: 'Seller agent fee', amount: sellerAgentFee, color: '#d9c02a' },
-    { id: 'title-escrow', label: 'Title / escrow / tax', amount: titleEscrowTax, color: '#a371f7' },
+    { id: 'title-escrow', label: 'Title / escrow fees', amount: titleEscrowTax, color: '#a371f7' },
+    { id: 'transfer-tax', label: 'Transfer tax', amount: transferTax, color: '#79c0ff' },
     { id: 'concessions', label: 'Seller concessions', amount: sellerConcessions, color: '#f778ba' },
     { id: 'repairs', label: 'Repairs & prep', amount: repairsPrep, color: '#ff7b72' },
     { id: 'other', label: 'Other expenses', amount: otherExpenses, color: '#8b949e' },
