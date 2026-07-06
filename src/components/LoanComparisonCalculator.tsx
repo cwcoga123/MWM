@@ -67,6 +67,7 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
   const downPaymentAmount = comparisonDownPaymentAmount(loan)
   const [homePriceFocused, setHomePriceFocused] = useState(false)
   const [downPaymentFocused, setDownPaymentFocused] = useState(false)
+  const [rateRawInput, setRateRawInput] = useState<string | null>(null)
 
   function update(patch: Partial<ComparisonLoanInput>) {
     onChange({ ...loan, ...patch })
@@ -166,13 +167,19 @@ function LoanEditor({ number, loan, onChange }: LoanEditorProps) {
         <span className="mortgage-input">
           <input
             id={`${idPrefix}-rate`}
-            type="number"
-            min="0"
-            max="100"
-            step="0.001"
+            type="text"
             inputMode="decimal"
-            value={loan.annualInterestRate}
-            onChange={(event) => update({ annualInterestRate: safeNumber(event.target.valueAsNumber) })}
+            value={rateRawInput !== null ? rateRawInput : String(loan.annualInterestRate)}
+            onFocus={() => setRateRawInput(loan.annualInterestRate === 0 ? '' : String(loan.annualInterestRate))}
+            onBlur={() => setRateRawInput(null)}
+            onChange={(event) => {
+              const raw = event.target.value
+              setRateRawInput(raw)
+              const num = Number(raw)
+              if (!Number.isNaN(num)) {
+                update({ annualInterestRate: safeNumber(num) })
+              }
+            }}
           />
           <span className="mortgage-input__suffix" aria-hidden="true">%</span>
         </span>

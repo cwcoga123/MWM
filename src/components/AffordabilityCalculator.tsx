@@ -65,6 +65,8 @@ interface PercentFieldProps {
 }
 
 function PercentField({ id, label, value, onChange, step = '0.01' }: PercentFieldProps) {
+  const [rawInput, setRawInput] = useState<string | null>(null)
+  const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
       <span>{label}</span>
@@ -72,12 +74,19 @@ function PercentField({ id, label, value, onChange, step = '0.01' }: PercentFiel
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
           id={id}
-          type="number"
-          min="0"
-          step={step}
+          type="text"
           inputMode="decimal"
-          value={value}
-          onChange={(event) => onChange(safeNumber(event.target.valueAsNumber))}
+          value={displayValue}
+          onFocus={() => setRawInput(value === 0 ? '' : String(value))}
+          onBlur={() => setRawInput(null)}
+          onChange={(event) => {
+            const raw = event.target.value
+            setRawInput(raw)
+            const num = Number(raw)
+            if (!Number.isNaN(num)) {
+              onChange(safeNumber(num))
+            }
+          }}
         />
       </span>
     </label>

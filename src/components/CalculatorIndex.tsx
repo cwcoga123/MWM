@@ -80,11 +80,8 @@ function CalculatorRow({
         <strong>{calculator.title}</strong>
         <small>{calculator.description}</small>
       </span>
-      {calculator.status === 'ready' ? (
-        <span className="status-pill">{calculator.featured ? 'First up' : 'Ready'}</span>
-      ) : (
-        <span className="calculator-row__arrow"><ArrowRight size={18} /></span>
-      )}
+      <span className="calculator-row__arrow"><ArrowRight size={18} /></span>
+     
     </a>
   )
 }

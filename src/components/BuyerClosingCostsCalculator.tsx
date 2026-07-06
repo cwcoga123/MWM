@@ -35,8 +35,9 @@ function FieldLabel({ label, help }: { label: string; help?: string }) {
     <span className="field-label">
       {label}
       {help && (
-        <span className="field-help" title={help} aria-label={help}>
+        <span className="field-help" aria-label={help}>
           <HelpCircle size={13} />
+          <span className="field-help__tooltip">{help}</span>
         </span>
       )}
     </span>
@@ -91,6 +92,8 @@ function PercentField({
   onChange: (value: number) => void
   help?: string
 }) {
+  const [rawInput, setRawInput] = useState<string | null>(null)
+  const displayValue = rawInput !== null ? rawInput : String(value)
   return (
     <label className="mortgage-field" htmlFor={id}>
       <FieldLabel label={label} help={help} />
@@ -98,12 +101,19 @@ function PercentField({
         <span className="mortgage-input__prefix" aria-hidden="true">%</span>
         <input
           id={id}
-          type="number"
-          min="0"
-          step="0.01"
+          type="text"
           inputMode="decimal"
-          value={value}
-          onChange={(event) => onChange(safeNumber(event.target.valueAsNumber))}
+          value={displayValue}
+          onFocus={() => setRawInput(value === 0 ? '' : String(value))}
+          onBlur={() => setRawInput(null)}
+          onChange={(event) => {
+            const raw = event.target.value
+            setRawInput(raw)
+            const num = Number(raw)
+            if (!Number.isNaN(num)) {
+              onChange(safeNumber(num))
+            }
+          }}
         />
       </span>
     </label>
@@ -199,6 +209,7 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
   const [purchasePrice, setPurchasePrice] = useState(1_250_000)
   const [downPayment, setDownPayment] = useState(250_000)
   const [downPaymentMode, setDownPaymentMode] = useState<AmountMode>('dollars')
+  const [downPaymentFocused, setDownPaymentFocused] = useState(false)
   const [estimatedClosingDate, setEstimatedClosingDate] = useState(DEFAULT_CLOSING_DATE)
   const [firstPaymentDue, setFirstPaymentDue] = useState(defaultFirstPaymentDue(DEFAULT_CLOSING_DATE))
 
@@ -487,13 +498,12 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
                 <input
                   id="bcc-down-payment"
                   aria-label={`Down payment in ${downPaymentMode}`}
-                  type="number"
-                  min="0"
-                  max={downPaymentMode === 'percent' ? 100 : undefined}
-                  step={downPaymentMode === 'percent' ? '0.1' : '100'}
+                  type="text"
                   inputMode="decimal"
-                  value={downPayment}
-                  onChange={(event) => setDownPayment(safeNumber(event.target.valueAsNumber))}
+                  value={downPaymentMode === 'dollars' && !downPaymentFocused ? (downPayment === 0 ? '' : downPayment.toLocaleString('en-US')) : (downPayment === 0 ? '' : String(downPayment))}
+                  onFocus={() => setDownPaymentFocused(true)}
+                  onBlur={() => setDownPaymentFocused(false)}
+                  onChange={(event) => setDownPayment(safeNumber(Number(event.target.value.replace(/,/g, ''))))}
                 />
               </span>
               <div className="mortgage-mode-toggle" aria-label="Down payment unit">
