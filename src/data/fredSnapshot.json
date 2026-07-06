@@ -1,0 +1,269 @@
+{
+  "generatedAt": "2026-07-06T06:30:00Z",
+  "values": {
+    "mortgage-30": {
+      "seriesId": "MORTGAGE30US",
+      "value": 6.43,
+      "date": "2026-07-02",
+      "previousValue": 6.49,
+      "previousDate": "2026-06-25",
+      "recentTrend": [
+        { "date": "2026-06-11", "value": 6.52 },
+        { "date": "2026-06-18", "value": 6.47 },
+        { "date": "2026-06-25", "value": 6.49 },
+        { "date": "2026-07-02", "value": 6.43 }
+      ]
+    },
+    "mortgage-15": {
+      "seriesId": "MORTGAGE15US",
+      "value": 5.79,
+      "date": "2026-07-02",
+      "previousValue": 5.84,
+      "previousDate": "2026-06-25",
+      "recentTrend": [
+        { "date": "2026-06-11", "value": 5.84 },
+        { "date": "2026-06-18", "value": 5.81 },
+        { "date": "2026-06-25", "value": 5.84 },
+        { "date": "2026-07-02", "value": 5.79 }
+      ]
+    },
+    "treasury-10y": {
+      "seriesId": "DGS10",
+      "value": 4.48,
+      "date": "2026-07-01",
+      "previousValue": 4.44,
+      "previousDate": "2026-06-30",
+      "recentTrend": [
+        { "date": "2026-02-27", "value": 3.97 },
+        { "date": "2026-03-31", "value": 4.30 },
+        { "date": "2026-04-30", "value": 4.40 },
+        { "date": "2026-05-29", "value": 4.45 },
+        { "date": "2026-06-30", "value": 4.44 },
+        { "date": "2026-07-01", "value": 4.48 }
+      ]
+    },
+    "fed-funds": {
+      "seriesId": "FEDFUNDS",
+      "value": 3.63,
+      "date": "2026-06-01",
+      "previousValue": 3.63,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 3.64 },
+        { "date": "2026-02-01", "value": 3.64 },
+        { "date": "2026-03-01", "value": 3.64 },
+        { "date": "2026-04-01", "value": 3.64 },
+        { "date": "2026-05-01", "value": 3.63 },
+        { "date": "2026-06-01", "value": 3.63 }
+      ]
+    },
+    "cpi": {
+      "seriesId": "CPIAUCSL",
+      "value": 333.979,
+      "date": "2026-05-01",
+      "previousValue": 332.407,
+      "previousDate": "2026-04-01",
+      "recentTrend": [
+        { "date": "2025-12-01", "value": 326.031 },
+        { "date": "2026-01-01", "value": 326.588 },
+        { "date": "2026-02-01", "value": 327.460 },
+        { "date": "2026-03-01", "value": 330.293 },
+        { "date": "2026-04-01", "value": 332.407 },
+        { "date": "2026-05-01", "value": 333.979 }
+      ]
+    },
+    "core-pce": {
+      "seriesId": "PCEPILFE",
+      "value": 130.082,
+      "date": "2026-05-01",
+      "previousValue": 129.667,
+      "previousDate": "2026-04-01",
+      "recentTrend": [
+        { "date": "2025-12-01", "value": 127.886 },
+        { "date": "2026-01-01", "value": 128.455 },
+        { "date": "2026-02-01", "value": 128.961 },
+        { "date": "2026-03-01", "value": 129.343 },
+        { "date": "2026-04-01", "value": 129.667 },
+        { "date": "2026-05-01", "value": 130.082 }
+      ]
+    },
+    "unemployment-rate": {
+      "seriesId": "UNRATE",
+      "value": 4.2,
+      "date": "2026-06-01",
+      "previousValue": 4.3,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 4.3 },
+        { "date": "2026-02-01", "value": 4.4 },
+        { "date": "2026-03-01", "value": 4.3 },
+        { "date": "2026-04-01", "value": 4.3 },
+        { "date": "2026-05-01", "value": 4.3 },
+        { "date": "2026-06-01", "value": 4.2 }
+      ]
+    },
+    "nonfarm-payrolls": {
+      "seriesId": "PAYEMS",
+      "value": 158984,
+      "date": "2026-06-01",
+      "previousValue": 158927,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 158592 },
+        { "date": "2026-02-01", "value": 158436 },
+        { "date": "2026-03-01", "value": 158650 },
+        { "date": "2026-04-01", "value": 158798 },
+        { "date": "2026-05-01", "value": 158927 },
+        { "date": "2026-06-01", "value": 158984 }
+      ]
+    },
+    "jobless-claims": {
+      "seriesId": "ICSA",
+      "value": 215000,
+      "date": "2026-06-27",
+      "previousValue": 216000,
+      "previousDate": "2026-06-20",
+      "recentTrend": [
+        { "date": "2026-06-06", "value": 230000 },
+        { "date": "2026-06-13", "value": 227000 },
+        { "date": "2026-06-20", "value": 216000 },
+        { "date": "2026-06-27", "value": 215000 }
+      ]
+    },
+    "gdp-growth": {
+      "seriesId": "A191RL1Q225SBEA",
+      "value": 2.1,
+      "date": "2026-01-01",
+      "previousValue": 0.5,
+      "previousDate": "2025-10-01",
+      "recentTrend": [
+        { "date": "2024-10-01", "value": 1.9 },
+        { "date": "2025-01-01", "value": -0.6 },
+        { "date": "2025-04-01", "value": 3.8 },
+        { "date": "2025-07-01", "value": 4.4 },
+        { "date": "2025-10-01", "value": 0.5 },
+        { "date": "2026-01-01", "value": 2.1 }
+      ]
+    },
+    "sf-case-shiller": {
+      "seriesId": "SFXRSA",
+      "value": 360.16,
+      "date": "2026-03-01",
+      "previousValue": 361.45,
+      "previousDate": "2026-02-01",
+      "recentTrend": [
+        { "date": "2025-10-01", "value": 359.25 },
+        { "date": "2025-11-01", "value": 360.81 },
+        { "date": "2025-12-01", "value": 361.20 },
+        { "date": "2026-01-01", "value": 360.98 },
+        { "date": "2026-02-01", "value": 361.45 },
+        { "date": "2026-03-01", "value": 360.16 }
+      ]
+    },
+    "sf-median-listing-price": {
+      "seriesId": "MEDLISPRI41860",
+      "value": 996500,
+      "date": "2026-06-01",
+      "previousValue": 998250,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 859000 },
+        { "date": "2026-02-01", "value": 909000 },
+        { "date": "2026-03-01", "value": 980250 },
+        { "date": "2026-04-01", "value": 998400 },
+        { "date": "2026-05-01", "value": 998250 },
+        { "date": "2026-06-01", "value": 996500 }
+      ]
+    },
+    "san-jose-median-listing-price": {
+      "seriesId": "MEDLISPRI41940",
+      "value": 1385000,
+      "date": "2026-06-01",
+      "previousValue": 1398000,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 1195000 },
+        { "date": "2026-02-01", "value": 1349975 },
+        { "date": "2026-03-01", "value": 1365000 },
+        { "date": "2026-04-01", "value": 1398500 },
+        { "date": "2026-05-01", "value": 1398000 },
+        { "date": "2026-06-01", "value": 1385000 }
+      ]
+    },
+    "san-jose-listings": {
+      "seriesId": "ACTLISCOU41940",
+      "value": 2212,
+      "date": "2026-06-01",
+      "previousValue": 2199,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 980 },
+        { "date": "2026-02-01", "value": 1319 },
+        { "date": "2026-03-01", "value": 1725 },
+        { "date": "2026-04-01", "value": 2019 },
+        { "date": "2026-05-01", "value": 2199 },
+        { "date": "2026-06-01", "value": 2212 }
+      ]
+    },
+    "sf-listings": {
+      "seriesId": "ACTLISCOU41860",
+      "value": 5944,
+      "date": "2026-06-01",
+      "previousValue": 5911,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 3158 },
+        { "date": "2026-02-01", "value": 3894 },
+        { "date": "2026-03-01", "value": 4724 },
+        { "date": "2026-04-01", "value": 5408 },
+        { "date": "2026-05-01", "value": 5911 },
+        { "date": "2026-06-01", "value": 5944 }
+      ]
+    },
+    "sf-days-on-market": {
+      "seriesId": "MEDDAYONMAR41860",
+      "value": 37,
+      "date": "2026-06-01",
+      "previousValue": 32,
+      "previousDate": "2026-05-01",
+      "recentTrend": [
+        { "date": "2026-01-01", "value": 55 },
+        { "date": "2026-02-01", "value": 30 },
+        { "date": "2026-03-01", "value": 29 },
+        { "date": "2026-04-01", "value": 31 },
+        { "date": "2026-05-01", "value": 32 },
+        { "date": "2026-06-01", "value": 37 }
+      ]
+    },
+    "san-jose-unemployment": {
+      "seriesId": "SANJ906URN",
+      "value": 3.5,
+      "date": "2026-05-01",
+      "previousValue": 3.8,
+      "previousDate": "2026-04-01",
+      "recentTrend": [
+        { "date": "2025-12-01", "value": 4.0 },
+        { "date": "2026-01-01", "value": 4.3 },
+        { "date": "2026-02-01", "value": 4.2 },
+        { "date": "2026-03-01", "value": 3.9 },
+        { "date": "2026-04-01", "value": 3.8 },
+        { "date": "2026-05-01", "value": 3.5 }
+      ]
+    },
+    "sf-unemployment": {
+      "seriesId": "SANF806URN",
+      "value": 3.6,
+      "date": "2026-05-01",
+      "previousValue": 3.9,
+      "previousDate": "2026-04-01",
+      "recentTrend": [
+        { "date": "2025-12-01", "value": 4.1 },
+        { "date": "2026-01-01", "value": 4.4 },
+        { "date": "2026-02-01", "value": 4.3 },
+        { "date": "2026-03-01", "value": 4.0 },
+        { "date": "2026-04-01", "value": 3.9 },
+        { "date": "2026-05-01", "value": 3.6 }
+      ]
+    }
+  }
+}
