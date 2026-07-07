@@ -6,13 +6,16 @@
  * every visitor. Instead, `scripts/fetch-fred-data.mjs` pulls recent history
  * for each series at build time (or on demand) and writes
  * `src/data/fredSnapshot.json`, which `FredIndicatorsSection` reads and
- * renders with an "as of" date, a trend arrow + date, and a recent-history
- * list (last 4 weeks for weekly series, last 6 periods otherwise). Run
- * `pnpm fetch:fred` to refresh. See docs/FRED_DATA.md.
+ * renders as an economic-calendar-style table (Time / Cur. / Event / Imp. /
+ * Actual / Forecast / Previous), with the recent-history trend tucked behind
+ * an expandable row. Run `pnpm fetch:fred` to refresh. See docs/FRED_DATA.md.
  */
 export type FredIndicatorCategory = 'rates' | 'fed-watch' | 'bay-area-housing' | 'local-economy'
 
 export type FredIndicatorUnit = 'percent' | 'currency' | 'index' | 'days' | 'count'
+
+/** 1 = low, 2 = medium, 3 = high — drives the star rating in the Imp. column. */
+export type FredIndicatorImportance = 1 | 2 | 3
 
 export interface FredIndicator {
   id: string
@@ -26,6 +29,7 @@ export interface FredIndicator {
   fredUrl: string
   category: FredIndicatorCategory
   unit: FredIndicatorUnit
+  importance: FredIndicatorImportance
 }
 
 export const fredIndicatorCategories: Record<FredIndicatorCategory, string> = {
@@ -46,6 +50,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/MORTGAGE30US',
     category: 'rates',
     unit: 'percent',
+    importance: 3,
   },
   {
     id: 'mortgage-15',
@@ -57,6 +62,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/MORTGAGE15US',
     category: 'rates',
     unit: 'percent',
+    importance: 2,
   },
   {
     id: 'treasury-10y',
@@ -68,6 +74,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/DGS10',
     category: 'rates',
     unit: 'percent',
+    importance: 3,
   },
   {
     id: 'fed-funds',
@@ -79,6 +86,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/FEDFUNDS',
     category: 'rates',
     unit: 'percent',
+    importance: 3,
   },
   {
     id: 'cpi',
@@ -90,6 +98,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/CPIAUCSL',
     category: 'fed-watch',
     unit: 'index',
+    importance: 3,
   },
   {
     id: 'core-pce',
@@ -101,6 +110,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/PCEPILFE',
     category: 'fed-watch',
     unit: 'index',
+    importance: 3,
   },
   {
     id: 'unemployment-rate',
@@ -112,6 +122,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/UNRATE',
     category: 'fed-watch',
     unit: 'percent',
+    importance: 3,
   },
   {
     id: 'nonfarm-payrolls',
@@ -123,6 +134,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/PAYEMS',
     category: 'fed-watch',
     unit: 'count',
+    importance: 3,
   },
   {
     id: 'jobless-claims',
@@ -134,6 +146,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/ICSA',
     category: 'fed-watch',
     unit: 'count',
+    importance: 2,
   },
   {
     id: 'gdp-growth',
@@ -145,6 +158,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/A191RL1Q225SBEA',
     category: 'fed-watch',
     unit: 'percent',
+    importance: 2,
   },
   {
     id: 'sf-case-shiller',
@@ -156,6 +170,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/SFXRSA',
     category: 'bay-area-housing',
     unit: 'index',
+    importance: 2,
   },
   {
     id: 'sf-median-listing-price',
@@ -167,6 +182,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/MEDLISPRI41860',
     category: 'bay-area-housing',
     unit: 'currency',
+    importance: 2,
   },
   {
     id: 'san-jose-median-listing-price',
@@ -178,6 +194,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/MEDLISPRI41940',
     category: 'bay-area-housing',
     unit: 'currency',
+    importance: 2,
   },
   {
     id: 'san-jose-listings',
@@ -189,6 +206,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/ACTLISCOU41940',
     category: 'bay-area-housing',
     unit: 'count',
+    importance: 1,
   },
   {
     id: 'sf-listings',
@@ -200,6 +218,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/ACTLISCOU41860',
     category: 'bay-area-housing',
     unit: 'count',
+    importance: 1,
   },
   {
     id: 'sf-days-on-market',
@@ -211,6 +230,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/MEDDAYONMAR41860',
     category: 'bay-area-housing',
     unit: 'days',
+    importance: 1,
   },
   {
     id: 'san-jose-unemployment',
@@ -222,6 +242,7 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/SANJ906URN',
     category: 'local-economy',
     unit: 'percent',
+    importance: 2,
   },
   {
     id: 'sf-unemployment',
@@ -233,5 +254,6 @@ export const fredIndicators: FredIndicator[] = [
     fredUrl: 'https://fred.stlouisfed.org/series/SANF806URN',
     category: 'local-economy',
     unit: 'percent',
+    importance: 2,
   },
 ]

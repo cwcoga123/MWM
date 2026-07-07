@@ -3905,6 +3905,287 @@ body,
   font-weight: 700;
 }
 
+/* Economic-calendar-style table (Time / Cur. / Event / Imp. / Actual / Forecast / Previous),
+   shared by FredIndicatorsSection and RealEstateCalendar. */
+.econ-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+  box-shadow: 0 8px 30px rgba(1, 4, 9, 0.14);
+}
+
+.econ-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.econ-table thead th {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--paper);
+}
+
+.econ-table thead th:nth-child(2),
+.econ-table thead th:nth-child(4) {
+  text-align: center;
+}
+
+.econ-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.econ-table tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+.econ-table__row {
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.econ-table__row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.econ-table__row--calendar {
+  cursor: default;
+}
+
+.econ-table__time {
+  min-width: 96px;
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.econ-table__time-detail {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.econ-table__est-mark {
+  margin-right: 3px;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.econ-table__flag {
+  text-align: center;
+  font-size: 15px;
+}
+
+.econ-table__event {
+  min-width: 220px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.econ-table__chevron {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+
+.econ-table__row[aria-expanded='true'] .econ-table__chevron {
+  color: #58a6ff;
+  transform: rotate(180deg);
+}
+
+.econ-table__event-name {
+  flex-basis: 100%;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.econ-table__series {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.econ-table__series a {
+  color: #58a6ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.econ-table__note {
+  flex-basis: 100%;
+  color: #e3b341;
+  font-size: 10px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.econ-table__stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--line);
+  white-space: nowrap;
+}
+
+.econ-table__stars svg {
+  fill: none;
+  stroke: currentColor;
+}
+
+.econ-table__stars svg.is-filled {
+  color: var(--gold);
+  fill: var(--gold);
+}
+
+.econ-table__actual {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.econ-table__actual--up {
+  color: var(--lime);
+}
+
+.econ-table__actual--down {
+  color: #f85149;
+}
+
+.econ-table__actual--flat {
+  color: var(--ink);
+}
+
+.econ-table__muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.econ-table__detail-row td {
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.econ-table__detail {
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px 16px 42px;
+}
+
+.econ-table__detail p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.econ-table__detail strong {
+  color: var(--ink);
+}
+
+.econ-table__detail-delta {
+  color: #79c0ff !important;
+  font-weight: 700;
+}
+
+.econ-table__history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+
+.econ-table__history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10.5px;
+}
+
+.econ-table__history-row span:first-child {
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.econ-table__history-row span:last-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.econ-table__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: #3fb950;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.econ-calendar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.econ-calendar-filter {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.econ-calendar-filter:hover {
+  color: var(--ink);
+  border-color: #484f58;
+}
+
+.econ-calendar-filter.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: #238636;
+}
+
+@media (max-width: 780px) {
+  .econ-table {
+    min-width: 560px;
+  }
+
+  .econ-table__detail {
+    padding-left: 18px;
+  }
+}
+
 .market-pulse-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

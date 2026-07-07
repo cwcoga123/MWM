@@ -1,4 +1,5 @@
-import { ArrowUpRight, Minus, TrendingDown, TrendingUp } from 'lucide-react'
+import { Fragment, useState } from 'react'
+import { ChevronDown, Minus, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { fredIndicatorCategories, fredIndicators, type FredIndicatorCategory } from '../../data/fredIndicators'
 import fredSnapshot from '../../data/fredSnapshot.json'
 import {
@@ -30,13 +31,28 @@ const TREND_ICON: Record<FredTrendDirection, typeof TrendingUp> = {
   flat: Minus,
 }
 
+/** Renders a 3-star importance rating, e.g. ★★☆ for importance 2. */
+function ImportanceStars({ importance }: { importance: 1 | 2 | 3 }) {
+  return (
+    <span className="econ-table__stars" aria-label={`Importance: ${importance} of 3`}>
+      {[1, 2, 3].map((n) => (
+        <Star key={n} size={11} className={n <= importance ? 'is-filled' : ''} />
+      ))}
+    </span>
+  )
+}
+
 /**
- * "Indicators worth watching" — curated FRED series with a live value, a
- * trend arrow + date vs. the prior reading, and a recent-period label row
- * (last 4 weeks for weekly series, last 6 months for everything else). See
- * src/data/fredIndicators.ts and docs/FRED_DATA.md for how the data flows.
+ * "Indicators worth watching" — curated FRED series rendered as an economic-
+ * calendar-style table (Time / Cur. / Event / Imp. / Actual / Forecast /
+ * Previous), one row per series, grouped by category. Forecast is always a
+ * dash: FRED reports actuals only, it doesn't carry consensus estimates.
+ * Click a row to expand the recent-history trend and the What/Why context.
+ * See src/data/fredIndicators.ts and docs/FRED_DATA.md for how the data flows.
  */
 export function FredIndicatorsSection() {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   return (
     <section className="overview-section">
       <div className="overview-section__heading">
@@ -50,76 +66,117 @@ export function FredIndicatorsSection() {
         return (
           <div className="indicator-group" key={category}>
             <h3 className="indicator-group__title">{fredIndicatorCategories[category]}</h3>
-            <div className="indicator-grid">
-              {indicatorsInCategory.map((indicator) => {
-                const snapshotValue = fredSnapshotValues[indicator.id]
-                const direction: FredTrendDirection = snapshotValue
-                  ? getTrendDirection(snapshotValue.value, snapshotValue.previousValue)
-                  : 'flat'
-                const TrendIcon = TREND_ICON[direction]
+            <div className="econ-table-wrap">
+              <table className="econ-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Cur.</th>
+                    <th>Event</th>
+                    <th>Imp.</th>
+                    <th>Actual</th>
+                    <th>Forecast</th>
+                    <th>Previous</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {indicatorsInCategory.map((indicator) => {
+                    const snapshotValue = fredSnapshotValues[indicator.id]
+                    const direction: FredTrendDirection = snapshotValue
+                      ? getTrendDirection(snapshotValue.value, snapshotValue.previousValue)
+                      : 'flat'
+                    const TrendIcon = TREND_ICON[direction]
+                    const isExpanded = expandedId === indicator.id
 
-                return (
-                  <a
-                    className="indicator-card"
-                    key={indicator.id}
-                    href={indicator.fredUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="indicator-card__top">
-                      <span className="indicator-card__series">{indicator.seriesId}</span>
-                      <div className="indicator-card__top-right">
-                        <span className="indicator-card__cadence">{indicator.cadence}</span>
-                        <span className="indicator-help" tabIndex={0} aria-label={`What: ${indicator.what} Why: ${indicator.why}`}>
-                          ?
-                          <span className="indicator-help__tooltip" role="tooltip">
-                            <strong>What:</strong> {indicator.what}
-                            <br />
-                            <strong>Why:</strong> {indicator.why}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <strong>{indicator.label}</strong>
-                    {snapshotValue && (
-                      <>
-                        <span className="indicator-card__value">
-                          {formatFredValue(indicator.unit, snapshotValue.value)}
-                        </span>
-                        <span className={`indicator-card__trend indicator-card__trend--${direction}`}>
-                          <TrendIcon size={12} />
-                          {formatTrendDelta(indicator.unit, snapshotValue.value, snapshotValue.previousValue)} from{' '}
-                          {formatShortDate(snapshotValue.previousDate)}
-                        </span>
-                        <span className="indicator-card__asof">as of {formatFredDate(snapshotValue.date)}</span>
-                        <div className="indicator-card__history">
-                          {snapshotValue.recentTrend.map((point) => (
-                            <div className="indicator-card__history-row" key={point.date}>
-                              <span className="indicator-card__history-label">
-                                {formatTrendPeriodLabel(indicator.cadence, point.date)}
-                              </span>
-                              <span className="indicator-card__history-value">
-                                {formatFredValue(indicator.unit, point.value)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    <span className="indicator-card__link">
-                      View live on FRED <ArrowUpRight size={13} />
-                    </span>
-                  </a>
-                )
-              })}
+                    return (
+                      <Fragment key={indicator.id}>
+                        <tr
+                          className="econ-table__row"
+                          onClick={() => setExpandedId(isExpanded ? null : indicator.id)}
+                          aria-expanded={isExpanded}
+                        >
+                          <td className="econ-table__time">
+                            {snapshotValue ? formatFredDate(snapshotValue.date) : '—'}
+                          </td>
+                          <td className="econ-table__flag" aria-label="United States">
+                            🇺🇸
+                          </td>
+                          <td className="econ-table__event">
+                            <ChevronDown size={13} className="econ-table__chevron" />
+                            <span className="econ-table__event-name">{indicator.label}</span>
+                            <span className="econ-table__series">{indicator.seriesId}</span>
+                          </td>
+                          <td>
+                            <ImportanceStars importance={indicator.importance} />
+                          </td>
+                          <td className={`econ-table__actual econ-table__actual--${direction}`}>
+                            {snapshotValue ? (
+                              <>
+                                {formatFredValue(indicator.unit, snapshotValue.value)}
+                                <TrendIcon size={11} />
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="econ-table__muted">—</td>
+                          <td className="econ-table__muted">
+                            {snapshotValue ? formatFredValue(indicator.unit, snapshotValue.previousValue) : '—'}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="econ-table__detail-row">
+                            <td colSpan={7}>
+                              <div className="econ-table__detail">
+                                <p>
+                                  <strong>What:</strong> {indicator.what}
+                                </p>
+                                <p>
+                                  <strong>Why:</strong> {indicator.why}
+                                </p>
+                                {snapshotValue && (
+                                  <>
+                                    <p className="econ-table__detail-delta">
+                                      {formatTrendDelta(indicator.unit, snapshotValue.value, snapshotValue.previousValue)}{' '}
+                                      from {formatShortDate(snapshotValue.previousDate)}
+                                    </p>
+                                    <div className="econ-table__history">
+                                      {snapshotValue.recentTrend.map((point) => (
+                                        <div className="econ-table__history-row" key={point.date}>
+                                          <span>{formatTrendPeriodLabel(indicator.cadence, point.date)}</span>
+                                          <span>{formatFredValue(indicator.unit, point.value)}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                                <a
+                                  className="econ-table__link"
+                                  href={indicator.fredUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  View live on FRED ({indicator.cadence.toLowerCase()})
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )
       })}
       <p className="overview-section__footnote">
         Values are pulled from FRED and snapshotted at build time (not a live browser feed — FRED doesn't
-        support that safely). Last refreshed {formatSnapshotTimestamp(fredSnapshot.generatedAt)}. Every card
-        still links straight to the series on FRED so you can verify or go deeper.
+        support that safely). Last refreshed {formatSnapshotTimestamp(fredSnapshot.generatedAt)}. Click any row
+        for the definition, why it matters, and recent history — or follow the link out to verify on FRED
+        directly.
       </p>
     </section>
   )

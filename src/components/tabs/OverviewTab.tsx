@@ -2,6 +2,7 @@ import { ArrowRight, Home, Sparkles } from 'lucide-react'
 import type { HubUser } from '../shell/AuthGate'
 import { calculators } from '../../data/calculators'
 import { FredIndicatorsSection } from '../shared/FredIndicatorsSection'
+import { RealEstateCalendar } from '../shared/RealEstateCalendar'
 import { marketPulseInsights, type MarketPulseInsight } from '../../data/marketPulse'
 import { quickActions } from '../../data/quickActions'
 
@@ -59,6 +60,8 @@ export function OverviewTab({ user, onOpenCalculator, onOpenAdvisorCard }: Overv
       </header>
 
       <FredIndicatorsSection />
+
+      <RealEstateCalendar />
 
       <section className="overview-section">
         <div className="overview-section__heading">
