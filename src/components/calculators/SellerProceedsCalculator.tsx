@@ -10,6 +10,8 @@ import {
   customaryShare,
   payerLabel,
 } from '../../data/caClosingCustoms'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface SellerProceedsCalculatorProps {
   onBack: () => void
@@ -162,6 +164,37 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
     setTransferTaxOverride(null)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Sale price', value: currency.format(salePrice) },
+          { label: 'Outstanding mortgage balance', value: currency.format(outstandingMortgage) },
+          ...(county
+            ? [{ label: 'Location', value: city ? `${city}, ${county} County, CA` : `${county} County, CA` }]
+            : []),
+          { label: 'Buyer agent fee', value: currency.format(buyerAgentFee) },
+          { label: 'Seller agent fee', value: currency.format(sellerAgentFee) },
+          { label: 'Title / escrow fees', value: currency.format(titleEscrowTax) },
+          { label: 'Transfer tax', value: currency.format(transferTax) },
+          { label: 'Seller concessions', value: currency.format(sellerConcessions) },
+          { label: 'Repairs & prep', value: currency.format(repairsPrep) },
+          { label: 'Other expenses', value: currency.format(otherExpenses) },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          {
+            label: isShortfall ? 'Estimated shortfall at closing' : 'Estimated net proceeds',
+            value: currency.format(Math.abs(result.netProceeds)),
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page seller-proceeds-page" id="seller-net-proceeds">
       <div className="mortgage-breadcrumb">
@@ -169,6 +202,7 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Seller's net proceeds" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

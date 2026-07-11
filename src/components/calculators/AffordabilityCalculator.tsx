@@ -13,6 +13,8 @@ import {
   type CreditScoreId,
   type LoanTermId,
 } from '../../lib/affordability'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface AffordabilityCalculatorProps {
   onBack: () => void
@@ -175,6 +177,47 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
     setTargetDti(TARGET_DTI)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Gross annual income', value: currency.format(grossAnnualIncome) },
+          { label: 'Monthly debt', value: currency.format(monthlyDebt) },
+          { label: 'Down payment', value: currency.format(downPayment) },
+          { label: 'Property tax rate', value: `${propertyTaxRate}% / year` },
+          { label: 'Credit score', value: creditScore.label },
+          { label: 'Loan term', value: loanTerm.label },
+          {
+            label: useCustomRate ? 'Custom interest rate' : 'Estimated interest rate',
+            value: `${interestRate.toFixed(3)}%`,
+          },
+          { label: 'Target debt-to-income', value: `${Math.round(targetDti * 100)}%` },
+          ...(removeMortgageInsurance
+            ? [{ label: 'Mortgage insurance', value: 'Excluded' }]
+            : []),
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Affordable home price', value: currency.format(result.affordablePrice) },
+          {
+            label: 'Monthly payment estimate',
+            value: `${currency.format(result.totalMonthlyPayment)} / month`,
+          },
+          ...(result.pmiActive
+            ? [{ label: 'Monthly PMI', value: `${currency.format(result.monthlyPmi)} / month` }]
+            : []),
+          {
+            label: 'Debt-to-income ratio',
+            value: `${Math.round(result.debtToIncomeRatio * 100)}% (${ZONE_LABEL[zone]})`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page" id="affordability">
       <div className="mortgage-breadcrumb">
@@ -182,6 +225,7 @@ export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Affordability calculator" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

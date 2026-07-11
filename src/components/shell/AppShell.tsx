@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Bell,
-  BookOpenText,
-  Calculator,
   ChevronDown,
   CircleHelp,
-  Home,
   LogOut,
   Menu,
   Settings,
@@ -14,6 +11,8 @@ import {
 import type { HubUser } from './AuthGate'
 import { CalculatorIndex } from '../tabs/CalculatorIndex'
 import { OverviewTab } from '../tabs/OverviewTab'
+import { CalendarTab } from '../tabs/CalendarTab'
+import { ResourcesTab } from '../tabs/ResourcesTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 
 interface AppShellProps {
@@ -21,17 +20,20 @@ interface AppShellProps {
   onSignOut: () => Promise<void>
 }
 
-type ActiveView = 'overview' | 'calculators'
+type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources'
 
 /**
- * The Overview tab is the default landing view. Any other hash (an explicit
- * '#calculators' or a specific calculator id like '#buyer-closing-costs')
- * routes to the Calculators view so deep links and "open this calculator"
- * actions keep working.
+ * The Overview tab is the default landing view. '#calendar' routes to the
+ * standalone Calendar view, '#resources' routes to the Resources view, and
+ * any other hash (an explicit '#calculators' or a specific calculator id like
+ * '#buyer-closing-costs') routes to the Calculators view so deep links and
+ * "open this calculator" actions keep working.
  */
 function viewFromHash(): ActiveView {
   const hash = window.location.hash.slice(1)
   if (!hash || hash === 'overview') return 'overview'
+  if (hash === 'calendar') return 'calendar'
+  if (hash === 'resources') return 'resources'
   return 'calculators'
 }
 
@@ -67,9 +69,21 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
     setMobileNavOpen(false)
   }
 
+  function openCalendar() {
+    window.location.hash = 'calendar'
+    setActiveView('calendar')
+    setMobileNavOpen(false)
+  }
+
   function openCalculators() {
     window.location.hash = 'calculators'
     setActiveView('calculators')
+    setMobileNavOpen(false)
+  }
+
+  function openResources() {
+    window.location.hash = 'resources'
+    setActiveView('resources')
     setMobileNavOpen(false)
   }
 
@@ -108,7 +122,18 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
               openOverview()
             }}
           >
-            <Home size={18} /> Overview
+            Overview
+          </a>
+          <a
+            href="#calendar"
+            className={activeView === 'calendar' ? 'is-active' : ''}
+            aria-current={activeView === 'calendar' ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              openCalendar()
+            }}
+          >
+            Calendar
           </a>
           <a
             href="#calculators"
@@ -119,9 +144,19 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
               openCalculators()
             }}
           >
-            <Calculator size={18} /> Calculators
+            Calculators
           </a>
-          <a href="#resources"><BookOpenText size={18} /> Resources</a>
+          <a
+            href="#resources"
+            className={activeView === 'resources' ? 'is-active' : ''}
+            aria-current={activeView === 'resources' ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              openResources()
+            }}
+          >
+            Resources
+          </a>
         </nav>
 
         <div className="sidebar__spacer" />
@@ -180,15 +215,17 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           <Menu size={21} />
         </button>
 
-        {activeView === 'overview' ? (
+        {activeView === 'overview' && (
           <OverviewTab
             user={user}
             onOpenCalculator={openCalculatorFromOverview}
+            onOpenCalculators={openCalculators}
             onOpenAdvisorCard={() => setAdvisorCardOpen(true)}
           />
-        ) : (
-          <CalculatorIndex />
         )}
+        {activeView === 'calendar' && <CalendarTab />}
+        {activeView === 'calculators' && <CalculatorIndex />}
+        {activeView === 'resources' && <ResourcesTab user={user} />}
       </div>
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />

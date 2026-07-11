@@ -17,6 +17,8 @@ import {
   type AmortizationLoanTermId,
   type PaymentFrequencyId,
 } from '../../lib/amortization'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface AmortizationCalculatorProps {
   onBack: () => void
@@ -293,6 +295,62 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
     setIntervalFrequency('once')
   }
 
+  function getShareSections(): ShareSection[] {
+    const frequency = paymentFrequencies.find((option) => option.id === intervalFrequency)
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Loan amount', value: currency.format(loanAmount) },
+          { label: 'Loan term', value: `${loanTerm.years} years` },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Start date', value: startDate },
+          ...(annualPropertyTax > 0
+            ? [{ label: 'Property tax', value: `${currency.format(annualPropertyTax)} / year` }]
+            : []),
+          ...(annualInsurance > 0
+            ? [{ label: 'Home insurance', value: `${currency.format(annualInsurance)} / year` }]
+            : []),
+          ...(annualHoa > 0
+            ? [{ label: 'HOA', value: `${currency.format(annualHoa)} / year` }]
+            : []),
+          ...(includePmi ? [{ label: 'PMI', value: 'Included' }] : []),
+          ...(additionalMonthly > 0
+            ? [{ label: 'Extra monthly payment', value: currency.format(additionalMonthly) }]
+            : []),
+          ...(intervalPayment > 0
+            ? [
+                {
+                  label: 'Extra payment',
+                  value: `${currency.format(intervalPayment)} (${frequency?.label ?? intervalFrequency}, from ${intervalInitialDate})`,
+                },
+              ]
+            : []),
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          {
+            label: 'Principal & interest',
+            value: `${currency.format(summary.monthlyPrincipalAndInterest)} / month`,
+          },
+          {
+            label: 'Total monthly payment',
+            value: `${currency.format(summary.totalMonthlyPayment)} / month`,
+          },
+          { label: 'Total principal paid', value: currency.format(summary.principalPaid) },
+          { label: 'Total interest paid', value: currency.format(summary.interestPaid) },
+          { label: 'Payoff time', value: formatElapsedDuration(summary.timeElapsedMonths) },
+          {
+            label: 'Payoff date',
+            value: summary.payoffDate ? monthYear.format(summary.payoffDate) : '—',
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page amortization-page" id="amortization-schedule">
       <div className="mortgage-breadcrumb">
@@ -300,6 +358,7 @@ export function AmortizationCalculator({ onBack }: AmortizationCalculatorProps) 
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Amortization calculator" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

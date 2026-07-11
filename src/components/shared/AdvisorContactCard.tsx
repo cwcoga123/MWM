@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { CalendarClock, Mail, MessageCircle, Phone, X } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { CalendarClock, Mail, MessageCircle, Phone, Send, X } from 'lucide-react'
 import { advisorContact } from '../../data/advisor'
+import { sendAdvisorEmail } from '../../lib/advisorEmail'
 
 interface AdvisorContactCardProps {
   open: boolean
@@ -16,6 +17,33 @@ interface AdvisorContactCardProps {
  */
 export function AdvisorContactCard({ open, onOpenChange }: AdvisorContactCardProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [feedback, setFeedback] = useState('')
+
+  async function handleSend(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const trimmed = message.trim()
+    if (!trimmed || sending) return
+
+    setSending(true)
+    setFeedback('')
+
+    const subject = 'MWM Client Hub - New client message'
+    const sent = await sendAdvisorEmail({ subject, message: trimmed })
+
+    if (sent) {
+      setMessage('')
+      setFeedback(`Sent to ${advisorContact.name}.`)
+    } else {
+      // Fall back to a prefilled draft so the message still reaches the advisor.
+      window.location.href = `mailto:${advisorContact.shareEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(trimmed)}`
+      setFeedback("Direct sending isn't configured yet, so an email draft opened instead.")
+    }
+
+    setSending(false)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -75,6 +103,26 @@ export function AdvisorContactCard({ open, onOpenChange }: AdvisorContactCardPro
               </a>
             )}
           </div>
+
+          <form className="advisor-card__message" onSubmit={handleSend}>
+            <label htmlFor="advisor-message">Send an email</label>
+            <textarea
+              id="advisor-message"
+              rows={3}
+              value={message}
+              placeholder="Ask a question or leave a message…"
+              onChange={(event) => setMessage(event.target.value)}
+              disabled={sending}
+            />
+            <button type="submit" disabled={sending || !message.trim()}>
+              <Send size={14} /> {sending ? 'Sending…' : 'Send email'}
+            </button>
+            {feedback && (
+              <small className="advisor-card__feedback" role="status">
+                {feedback}
+              </small>
+            )}
+          </form>
 
           <p className="advisor-card__license">{advisorContact.license}</p>
         </div>

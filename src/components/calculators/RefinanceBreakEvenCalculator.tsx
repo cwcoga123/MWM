@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { ArrowLeft, HelpCircle, KeyRound, Printer, RotateCcw } from 'lucide-react'
 import { calculateRefinanceBreakEven } from '../../lib/refinanceBreakEven'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface RefinanceBreakEvenCalculatorProps {
   onBack: () => void
@@ -240,6 +242,53 @@ export function RefinanceBreakEvenCalculator({ onBack }: RefinanceBreakEvenCalcu
 
   const noSavings = result.monthlySavings <= 0
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Current loan balance', value: currency.format(currentLoanBalance) },
+          { label: 'Current interest rate', value: `${currentInterestRate}%` },
+          { label: 'Current remaining term', value: `${currentRemainingTermYears} years` },
+          { label: 'New interest rate', value: `${newInterestRate}%` },
+          { label: 'New loan term', value: `${newLoanTermYears} years` },
+          { label: 'Refinance closing costs', value: currency.format(refinanceClosingCosts) },
+          ...(cashOutAmount > 0
+            ? [{ label: 'Cash-out amount', value: currency.format(cashOutAmount) }]
+            : []),
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          {
+            label: 'Current monthly payment (P&I)',
+            value: preciseCurrency.format(result.currentMonthlyPI),
+          },
+          {
+            label: 'New monthly payment (P&I)',
+            value: preciseCurrency.format(result.newMonthlyPI),
+          },
+          { label: 'Monthly savings', value: preciseCurrency.format(result.monthlySavings) },
+          {
+            label: `Lifetime interest ${result.lifetimeInterestSavings >= 0 ? 'savings' : 'cost'}`,
+            value: currency.format(Math.abs(result.lifetimeInterestSavings)),
+          },
+          {
+            label: 'Break-even point',
+            value: noSavings
+              ? 'No break-even (no monthly savings)'
+              : result.breakEvenMonths === null
+                ? 'Not available'
+                : result.breakEvenMonths <= 0
+                  ? 'Immediate (no closing costs)'
+                  : `About ${Math.ceil(result.breakEvenMonths)} months (${(result.breakEvenMonths / 12).toFixed(1)} years)`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page refinance-break-even-page" id="refinance-break-even">
       <div className="mortgage-breadcrumb">
@@ -247,6 +296,7 @@ export function RefinanceBreakEvenCalculator({ onBack }: RefinanceBreakEvenCalcu
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Refinance break-even" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

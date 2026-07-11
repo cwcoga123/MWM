@@ -89,15 +89,24 @@ export function RealEstateCalendar() {
               <h3 className="indicator-group__title">{calendarCategories[category]}</h3>
               <div className="econ-table-wrap">
                 <table className="econ-table">
+                  <colgroup>
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '6%' }} />
+                    <col style={{ width: '44%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '9%' }} />
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th>Time</th>
-                      <th>Cur.</th>
-                      <th>Event</th>
-                      <th>Imp.</th>
-                      <th>Actual</th>
-                      <th>Forecast</th>
-                      <th>Previous</th>
+                      <th className="econ-table__th--left">Time</th>
+                      <th className="econ-table__th--center">Cur.</th>
+                      <th className="econ-table__th--left">Event</th>
+                      <th className="econ-table__th--center">Imp.</th>
+                      <th className="econ-table__th--right">Actual</th>
+                      <th className="econ-table__th--right">Forecast</th>
+                      <th className="econ-table__th--right">Previous</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -121,12 +130,12 @@ export function RealEstateCalendar() {
                           </span>
                           {event.note && <span className="econ-table__note">{event.note}</span>}
                         </td>
-                        <td>
+                        <td className="econ-table__cell--center">
                           <ImportanceStars importance={event.importance} />
                         </td>
-                        <td className="econ-table__muted">—</td>
-                        <td className="econ-table__muted">—</td>
-                        <td className="econ-table__muted">—</td>
+                        <td className="econ-table__muted econ-table__cell--right">—</td>
+                        <td className="econ-table__muted econ-table__cell--right">—</td>
+                        <td className="econ-table__muted econ-table__cell--right">—</td>
                       </tr>
                     ))}
                   </tbody>

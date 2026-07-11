@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { ArrowLeft, HelpCircle, Printer, RotateCcw, TrendingUp } from 'lucide-react'
 import { calculateHomeEquity } from '../../lib/homeEquity'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface HomeEquityCalculatorProps {
   onBack: () => void
@@ -187,6 +189,44 @@ export function HomeEquityCalculator({ onBack }: HomeEquityCalculatorProps) {
     setYearsToProject(10)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Current home value', value: currency.format(currentHomeValue) },
+          { label: 'Current mortgage balance', value: currency.format(currentMortgageBalance) },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Remaining term', value: `${remainingTermYears} years` },
+          { label: 'Home appreciation', value: `${homeAppreciationRate}% / year` },
+          { label: 'Years to project', value: String(yearsToProject) },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Current equity', value: currency.format(result.currentEquity) },
+          {
+            label: 'Equity share of value',
+            value: `${(result.currentEquityPercent * 100).toFixed(1)}%`,
+          },
+          {
+            label: 'Current loan-to-value',
+            value: `${(result.currentLoanToValue * 100).toFixed(1)}%`,
+          },
+          {
+            label: 'Available at 80% CLTV',
+            value: currency.format(result.availableEquityAt80Percent),
+          },
+          {
+            label: `Projected equity in ${yearsToProject} ${yearsToProject === 1 ? 'year' : 'years'}`,
+            value: currency.format(result.projectedEquity),
+          },
+        ],
+      },
+    ]
+  }
+
   const maxYear = result.points[result.points.length - 1]?.year ?? 1
   const maxValue = Math.max(1, ...result.points.map((point) => point.homeValue))
   const niceMax = (() => {
@@ -250,6 +290,7 @@ export function HomeEquityCalculator({ onBack }: HomeEquityCalculatorProps) {
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Home equity" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

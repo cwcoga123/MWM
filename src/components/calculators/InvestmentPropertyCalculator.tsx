@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, HelpCircle, Landmark, Printer, RotateCcw } from 'lucide-react'
 import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 import { calculateInvestmentProperty, conicGradient, downPaymentAmountFor, type AmountMode } from '../../lib/investmentProperty'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface InvestmentPropertyCalculatorProps {
   onBack: () => void
@@ -208,6 +210,50 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
   const donutItems = result.breakdown.filter((item) => item.amount > 0)
   const gradient = conicGradient(result.breakdown)
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Purchase price', value: currency.format(purchasePrice) },
+          { label: 'Down payment', value: currency.format(result.downPaymentAmount) },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Monthly rent', value: currency.format(monthlyRent) },
+          { label: 'Vacancy rate', value: `${vacancyRate}%` },
+          { label: 'Management fee', value: `${managementRate}%` },
+          { label: 'Annual property tax', value: currency.format(annualPropertyTax) },
+          { label: 'Annual insurance', value: currency.format(annualInsurance) },
+          { label: 'Monthly HOA', value: currency.format(monthlyHoa) },
+          { label: 'Maintenance', value: `${maintenanceRate}% of value / year` },
+          { label: 'Other monthly expenses', value: currency.format(otherMonthlyExpenses) },
+          { label: 'Estimated closing costs', value: `${closingCostRate}% of price` },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Cap rate', value: `${(result.capRate * 100).toFixed(2)}%` },
+          {
+            label: 'Cash-on-cash return',
+            value: `${(result.cashOnCashReturn * 100).toFixed(2)}%`,
+          },
+          {
+            label: 'Monthly cash flow',
+            value: `${preciseCurrency.format(result.monthlyCashFlow)} / month`,
+          },
+          { label: 'Loan amount', value: currency.format(result.loanAmount) },
+          { label: 'Total cash invested', value: currency.format(result.totalCashInvested) },
+          { label: 'Net operating income (annual)', value: currency.format(result.noiAnnual) },
+          {
+            label: 'Rent-to-price ratio',
+            value: `${(result.onePercentRuleRatio * 100).toFixed(2)}%`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page investment-property-page" id="investment-property">
       <div className="mortgage-breadcrumb">
@@ -215,6 +261,7 @@ export function InvestmentPropertyCalculator({ onBack }: InvestmentPropertyCalcu
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Investment property" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

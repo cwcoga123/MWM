@@ -7,6 +7,8 @@ import {
   propertyTaxAmount,
   type AmountMode,
 } from '../../lib/rentVsBuy'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface RentVsBuyCalculatorProps {
   onBack: () => void
@@ -354,6 +356,59 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
   const leaderLabel = finalDiff >= 0 ? 'Buying' : 'Renting'
   const leaderAmount = Math.abs(finalDiff)
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Home price', value: currency.format(homePrice) },
+          { label: 'Monthly rent', value: currency.format(monthlyRent) },
+          { label: 'Down payment', value: currency.format(downPaymentAmt) },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Property tax', value: `${currency.format(propertyTaxAmt)} / year` },
+          { label: 'Home insurance', value: `${currency.format(annualHomeInsurance)} / year` },
+          { label: 'HOA', value: `${currency.format(annualHoa)} / year` },
+          { label: 'Home appreciation', value: `${homeAppreciationRate}% / year` },
+          { label: 'Rent growth', value: `${rentGrowthRate}% / year` },
+          { label: 'Maintenance', value: `${maintenanceRate}% of value / year` },
+          { label: 'Closing costs', value: `${closingCostRate}% of price` },
+          { label: 'Selling costs', value: `${sellingCostRate}% of price` },
+          { label: 'Length of stay', value: `${lengthOfStay} years` },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          {
+            label: 'Monthly principal & interest',
+            value: `${preciseCurrency.format(result.monthlyPrincipalAndInterest)} / month`,
+          },
+          { label: 'Closing costs', value: currency.format(result.closingCosts) },
+          {
+            label: 'Break-even year',
+            value:
+              result.breakEvenYear === null
+                ? 'None within the projection'
+                : `Year ${result.breakEvenYear}`,
+          },
+          {
+            label: `Net position after ${lengthOfStay} years (buying)`,
+            value: currency.format(result.finalBuyingNetPosition),
+          },
+          {
+            label: `Net position after ${lengthOfStay} years (renting)`,
+            value: currency.format(result.finalRentingNetPosition),
+          },
+          {
+            label: 'Bottom line',
+            value: `${leaderLabel} comes out ahead by ${currency.format(leaderAmount)}`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page rent-vs-buy-page" id="rent-vs-buy">
       <div className="mortgage-breadcrumb">
@@ -361,6 +416,7 @@ export function RentVsBuyCalculator({ onBack }: RentVsBuyCalculatorProps) {
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Rent vs. buy" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

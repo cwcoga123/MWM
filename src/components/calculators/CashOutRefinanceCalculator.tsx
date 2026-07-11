@@ -8,6 +8,8 @@ import {
   type CreditScoreId,
   type LoanTermId,
 } from '../../lib/mortgage'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface CashOutRefinanceCalculatorProps {
   onBack: () => void
@@ -188,6 +190,46 @@ export function CashOutRefinanceCalculator({
     setAnnualPropertyTax(1_200)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Home value', value: currency.format(homeValue) },
+          { label: 'Current loan balance', value: currency.format(loanBalance) },
+          { label: 'Requested cash out', value: currency.format(requestedCashOut) },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Credit score', value: creditScore.label },
+          { label: 'Estimated interest rate', value: `${interestRate.toFixed(2)}%` },
+          { label: 'Property tax', value: `${currency.format(annualPropertyTax)} / year` },
+          { label: 'Home insurance', value: `${currency.format(annualInsurance)} / year` },
+          { label: 'HOA fees', value: `${currency.format(monthlyHoa)} / month` },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Maximum cash available', value: currency.format(maximumCashAvailable) },
+          { label: 'Cash applied', value: currency.format(appliedCashOut) },
+          { label: 'New loan amount', value: currency.format(newLoanAmount) },
+          { label: 'New loan-to-value', value: `${newLtv.toFixed(1)}%` },
+          ...(mortgageInsurance > 0
+            ? [
+                {
+                  label: 'Mortgage insurance',
+                  value: `${preciseCurrency.format(mortgageInsurance)} / month`,
+                },
+              ]
+            : []),
+          {
+            label: 'New monthly payment',
+            value: `${preciseCurrency.format(totalPayment)} / month`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page" id="cash-out-refinance">
       <div className="mortgage-breadcrumb">
@@ -195,6 +237,7 @@ export function CashOutRefinanceCalculator({
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Cash-out refinance" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

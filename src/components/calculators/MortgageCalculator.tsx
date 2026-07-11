@@ -10,6 +10,8 @@ import {
   type CreditScoreId,
   type LoanTermId,
 } from '../../lib/mortgage'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 type DownPaymentMode = 'dollars' | 'percent'
 
@@ -200,6 +202,53 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
     setRemovePmi(false)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Home price', value: currency.format(homePrice) },
+          {
+            label: 'Down payment',
+            value: `${currency.format(downPaymentAmount)} (${
+              homePrice > 0 ? ((downPaymentAmount / homePrice) * 100).toFixed(1) : '0'
+            }%)`,
+          },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Credit score', value: creditScore.label },
+          { label: 'Estimated interest rate', value: `${interestRate.toFixed(2)}%` },
+          { label: 'Property tax', value: `${currency.format(annualPropertyTax)} / year` },
+          { label: 'Home insurance', value: `${currency.format(annualInsurance)} / year` },
+          { label: 'HOA fees', value: `${currency.format(monthlyHoa)} / month` },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Loan amount', value: currency.format(payment.loanAmount) },
+          {
+            label: 'Principal & interest',
+            value: `${preciseCurrency.format(payment.principalAndInterest)} / month`,
+          },
+          ...(pmiEligible
+            ? [
+                {
+                  label: 'Mortgage insurance (PMI)',
+                  value: removePmi
+                    ? 'Removed'
+                    : `${preciseCurrency.format(monthlyPmi)} / month`,
+                },
+              ]
+            : []),
+          {
+            label: 'Total monthly payment',
+            value: `${preciseCurrency.format(totalMonthly)} / month`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page" id="mortgage-calculator">
       <div className="mortgage-breadcrumb">
@@ -207,6 +256,7 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Mortgage calculator" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

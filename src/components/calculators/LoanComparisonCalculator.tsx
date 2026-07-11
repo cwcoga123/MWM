@@ -8,6 +8,8 @@ import {
   type ComparisonLoanResult,
 } from '../../lib/loanComparison'
 import { loanTerms, type LoanTermId } from '../../lib/mortgage'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface LoanComparisonCalculatorProps {
   onBack: () => void
@@ -273,6 +275,45 @@ export function LoanComparisonCalculator({ onBack }: LoanComparisonCalculatorPro
     setResults(null)
   }
 
+  function loanShareEntries(loan: ComparisonLoanInput) {
+    const term = loanTerms.find((candidate) => candidate.id === loan.loanTermId)
+    return [
+      { label: 'Home price', value: currency.format(loan.homePrice) },
+      { label: 'Down payment', value: currency.format(comparisonDownPaymentAmount(loan)) },
+      { label: 'Loan term', value: term?.label ?? loan.loanTermId },
+      { label: 'Interest rate', value: `${loan.annualInterestRate}%` },
+    ]
+  }
+
+  function getShareSections(): ShareSection[] {
+    const compared = results ?? {
+      loan1: calculateComparisonLoan(loan1),
+      loan2: calculateComparisonLoan(loan2),
+    }
+
+    return [
+      { title: 'Loan 1', entries: loanShareEntries(loan1) },
+      { title: 'Loan 2', entries: loanShareEntries(loan2) },
+      {
+        title: 'Results (Loan 1 vs. Loan 2)',
+        entries: [
+          {
+            label: 'Monthly payment',
+            value: `${preciseCurrency.format(compared.loan1.monthlyPayment)} vs. ${preciseCurrency.format(compared.loan2.monthlyPayment)}`,
+          },
+          {
+            label: 'Total interest paid',
+            value: `${preciseCurrency.format(compared.loan1.totalInterest)} vs. ${preciseCurrency.format(compared.loan2.totalInterest)}`,
+          },
+          {
+            label: 'Total cost of the loan',
+            value: `${preciseCurrency.format(compared.loan1.totalCost)} vs. ${preciseCurrency.format(compared.loan2.totalCost)}`,
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page loan-comparison-page" id="loan-comparison">
       <div className="mortgage-breadcrumb">
@@ -280,6 +321,7 @@ export function LoanComparisonCalculator({ onBack }: LoanComparisonCalculatorPro
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Loan comparison" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

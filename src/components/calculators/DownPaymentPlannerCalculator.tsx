@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, Banknote, HelpCircle, Printer, RotateCcw } from 'lucide-react'
 import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 import { calculateDownPaymentPlan, downPaymentAmountFor, type AmountMode } from '../../lib/downPaymentPlanner'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface DownPaymentPlannerCalculatorProps {
   onBack: () => void
@@ -177,6 +179,56 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
 
   const reservesWarning = result.monthsOfReserves !== null && result.monthsOfReserves < 3
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Home price', value: currency.format(homePrice) },
+          {
+            label: 'Down payment',
+            value: `${currency.format(result.downPaymentAmount)} (${result.downPaymentPercent.toFixed(1)}%)`,
+          },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Cash reserves available', value: currency.format(cashReserves) },
+          { label: 'Annual property tax', value: currency.format(annualPropertyTax) },
+          { label: 'Annual home insurance', value: currency.format(annualHomeInsurance) },
+          { label: 'Monthly HOA', value: currency.format(monthlyHoa) },
+          { label: 'Estimated closing costs', value: `${closingCostRate}% of price` },
+        ],
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Loan amount', value: currency.format(result.loanAmount) },
+          { label: 'Loan-to-value', value: `${(result.loanToValue * 100).toFixed(1)}%` },
+          {
+            label: 'Total monthly payment',
+            value: `${currency.format(result.totalMonthlyPayment)} / month`,
+          },
+          ...(result.pmiRequired
+            ? [
+                {
+                  label: 'Mortgage insurance (PMI)',
+                  value: `${currency.format(result.monthlyPMI)} / month`,
+                },
+              ]
+            : []),
+          { label: 'Cash needed at closing', value: currency.format(result.cashNeededAtClosing) },
+          { label: 'Remaining reserves', value: currency.format(result.remainingReserves) },
+          {
+            label: 'Months of reserves after closing',
+            value:
+              result.monthsOfReserves === null
+                ? 'Exceeds available cash'
+                : result.monthsOfReserves.toFixed(1),
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page down-payment-page" id="down-payment">
       <div className="mortgage-breadcrumb">
@@ -184,6 +236,7 @@ export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalcu
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Down payment planner" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

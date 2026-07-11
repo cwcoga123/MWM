@@ -17,6 +17,8 @@ import {
   downPaymentAmount,
   type AmountMode,
 } from '../../lib/buyerClosingCosts'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface BuyerClosingCostsCalculatorProps {
   onBack: () => void
@@ -480,6 +482,46 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
     setCity('')
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [
+          { label: 'Purchase price', value: currency.format(purchasePrice) },
+          { label: 'Down payment', value: currency.format(downPaymentAmt) },
+          { label: 'Loan term', value: loanTerm.label },
+          { label: 'Interest rate', value: `${interestRate}%` },
+          { label: 'Estimated closing date', value: estimatedClosingDate },
+          ...(county
+            ? [{ label: 'Location', value: city ? `${city}, ${county} County, CA` : `${county} County, CA` }]
+            : []),
+          { label: 'Earnest deposit', value: currency.format(earnestDeposit) },
+        ],
+      },
+      {
+        title: 'Cost breakdown',
+        entries: result.sections
+          .filter((section) => section.subtotal > 0)
+          .map((section) => ({
+            label: section.label,
+            value: currency.format(section.subtotal),
+          })),
+      },
+      {
+        title: 'Results',
+        entries: [
+          { label: 'Loan amount', value: currency.format(result.loanAmount) },
+          { label: 'Total closing costs', value: currency.format(result.totalCosts) },
+          { label: 'Total credits', value: currency.format(result.totalCredits) },
+          {
+            label: isOverage ? 'Credit back at closing' : 'Cash needed to close',
+            value: currency.format(Math.abs(result.netAtClosing)),
+          },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page buyer-closing-costs-page" id="buyer-closing-costs">
       <div className="mortgage-breadcrumb">
@@ -487,6 +529,7 @@ export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalcula
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Buyer's closing costs" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>

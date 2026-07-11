@@ -10,6 +10,8 @@ import {
   formatRate,
   rateProducts,
 } from '../../lib/mortgageRates'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 interface MortgageRatesCalculatorProps {
   onBack: () => void
@@ -39,6 +41,22 @@ export function MortgageRatesCalculator({ onBack }: MortgageRatesCalculatorProps
     setScore(DEFAULT_SCORE)
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'My inputs',
+        entries: [{ label: 'Credit score', value: `${score} (${activeBand.label})` }],
+      },
+      {
+        title: 'Estimated rates',
+        entries: rateProducts.map((product) => ({
+          label: product.label,
+          value: formatRate(calculateProductRate(product, score)),
+        })),
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page mortgage-rates-page" id="mortgage-rates">
       <div className="mortgage-breadcrumb">
@@ -46,6 +64,7 @@ export function MortgageRatesCalculator({ onBack }: MortgageRatesCalculatorProps
           <ArrowLeft size={16} /> All calculators
         </button>
         <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Mortgage rates" getSections={getShareSections} />
           <button type="button" onClick={resetCalculator}>
             <RotateCcw size={15} /> Reset
           </button>
