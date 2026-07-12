@@ -205,6 +205,91 @@ a {
   margin-left: 248px;
 }
 
+/* Top header layout — the primary nav becomes a horizontal bar across the
+   top of the app on wider viewports instead of a left sidebar. The 780px
+   breakpoint below reverts to the original left-drawer treatment for phones. */
+@media (min-width: 781px) {
+  .sidebar {
+    inset: 0 0 auto 0;
+    width: 100%;
+    height: 68px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 24px;
+  }
+
+  .sidebar__top {
+    padding: 0;
+    margin-right: 28px;
+  }
+
+  .primary-nav,
+  .secondary-nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .primary-nav a {
+    min-height: 40px;
+  }
+
+  .primary-nav a:hover {
+    padding-left: 16px;
+  }
+
+  .primary-nav a.is-active {
+    box-shadow: inset 0 -3px 0 var(--lime);
+  }
+
+  .sidebar__spacer {
+    flex: 1;
+  }
+
+  .secondary-nav {
+    padding-top: 0;
+    padding-left: 18px;
+    margin-left: 4px;
+    border-top: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.11);
+  }
+
+  .sidebar__account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    padding-top: 0;
+    margin-left: 16px;
+    border-top: 0;
+  }
+
+  .notification-button {
+    width: auto;
+  }
+
+  .notification-button span:not(.notification-button__dot) {
+    display: none;
+  }
+
+  .profile-button {
+    width: auto;
+  }
+
+  .profile-popover {
+    top: calc(100% + 10px);
+    right: 0;
+    left: auto;
+    bottom: auto;
+  }
+
+  .app-main {
+    margin-left: 0;
+    margin-top: 68px;
+  }
+}
+
 .icon-button {
   width: 39px;
   height: 39px;
@@ -298,14 +383,19 @@ a {
 
 .profile-popover {
   position: absolute;
-  bottom: 0;
-  left: calc(100% + 10px);
+  top: calc(100% + 10px);
+  right: 0;
+  left: auto;
+  bottom: auto;
+  display: grid;
+  gap: 3px;
   min-width: 220px;
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--paper);
   box-shadow: var(--shadow);
+  z-index: 40;
 }
 
 .profile-popover p {
@@ -314,7 +404,8 @@ a {
   font-size: 12px;
 }
 
-.profile-popover button {
+.profile-popover button,
+.profile-popover a {
   width: 100%;
   display: flex;
   align-items: center;
@@ -393,6 +484,102 @@ a {
   grid-template-columns: minmax(0, 1fr) 310px;
   gap: 30px;
   align-items: start;
+}
+
+/* Readiness & rate tools — deliberately styled apart from .calculator-group
+   (dark forest panel vs. the plain white category cards below) so Pre-approval
+   readiness checklist and Refi Watch read as their own distinct feature set
+   rather than blending in with the regular calculators. */
+.calculator-special-section {
+  margin-bottom: 34px;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--forest);
+  box-shadow: 0 16px 44px rgba(16, 47, 43, 0.22);
+}
+
+.calculator-special-section__heading {
+  margin-bottom: 16px;
+}
+
+.calculator-special-section__heading .group-kicker {
+  color: rgba(247, 246, 239, 0.6);
+}
+
+.calculator-special-section__heading h2 {
+  margin: 6px 0 0;
+  color: #f7f6ef;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.calculator-special-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.calculator-special-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  color: #f7f6ef;
+  background: rgba(255, 255, 255, 0.05);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.calculator-special-card:hover {
+  border-color: var(--lime);
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-1px);
+}
+
+.calculator-special-card__icon {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(201, 217, 91, 0.35);
+  border-radius: 10px;
+  color: var(--lime);
+  background: rgba(201, 217, 91, 0.12);
+}
+
+.calculator-special-card__icon--blue {
+  border-color: rgba(121, 174, 180, 0.4);
+  color: var(--blue);
+  background: rgba(121, 174, 180, 0.14);
+}
+
+.calculator-special-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.calculator-special-card__copy strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.calculator-special-card__copy small {
+  color: rgba(247, 246, 239, 0.68);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.calculator-special-card__arrow {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: rgba(247, 246, 239, 0.5);
 }
 
 .search-box {
@@ -1200,6 +1387,12 @@ body,
 
 .primary-nav a.is-active {
   box-shadow: inset 3px 0 0 #3fb950;
+}
+
+@media (min-width: 781px) {
+  .primary-nav a.is-active {
+    box-shadow: inset 0 -3px 0 #3fb950;
+  }
 }
 
 .secondary-nav {

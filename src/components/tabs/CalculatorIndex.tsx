@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
+  BellRing,
   ChevronDown,
+  ClipboardCheck,
   Clock3,
   Search,
   Sparkles,
@@ -20,6 +22,13 @@ import { DownPaymentPlannerCalculator } from '../calculators/DownPaymentPlannerC
 import { HomeEquityCalculator } from '../calculators/HomeEquityCalculator'
 import { InvestmentPropertyCalculator } from '../calculators/InvestmentPropertyCalculator'
 import { RefinanceBreakEvenCalculator } from '../calculators/RefinanceBreakEvenCalculator'
+import { PreapprovalChecklistTool } from '../calculators/PreapprovalChecklistTool'
+import { RefiWatchTool } from '../calculators/RefiWatchTool'
+import type { HubUser } from '../shell/AuthGate'
+
+interface CalculatorIndexProps {
+  user: HubUser
+}
 
 type ActiveCalculator =
   | 'mortgage-calculator'
@@ -35,6 +44,8 @@ type ActiveCalculator =
   | 'home-equity'
   | 'investment-property'
   | 'refinance-break-even'
+  | 'preapproval'
+  | 'refi-watch'
   | null
 
 const OPENABLE_CALCULATORS: Exclude<ActiveCalculator, null>[] = [
@@ -51,6 +62,8 @@ const OPENABLE_CALCULATORS: Exclude<ActiveCalculator, null>[] = [
   'home-equity',
   'investment-property',
   'refinance-break-even',
+  'preapproval',
+  'refi-watch',
 ]
 
 function calculatorFromHash(): ActiveCalculator {
@@ -86,7 +99,7 @@ function CalculatorRow({
   )
 }
 
-export function CalculatorIndex() {
+export function CalculatorIndex({ user }: CalculatorIndexProps) {
   const FeaturedIcon = calculators[0].icon
   const [query, setQuery] = useState('')
   const [activeCalculator, setActiveCalculator] =
@@ -187,6 +200,14 @@ export function CalculatorIndex() {
     return <RefinanceBreakEvenCalculator onBack={closeCalculator} />
   }
 
+  if (activeCalculator === 'preapproval') {
+    return <PreapprovalChecklistTool user={user} onBack={closeCalculator} />
+  }
+
+  if (activeCalculator === 'refi-watch') {
+    return <RefiWatchTool onBack={closeCalculator} />
+  }
+
   return (
     <main className="calculator-page" id="calculators">
       <section className="page-heading">
@@ -199,6 +220,31 @@ export function CalculatorIndex() {
           </p>
         </div>
         <div className="heading-note"><Sparkles size={17} /> New tools are added regularly</div>
+      </section>
+
+      <section className="calculator-special-section" aria-label="Readiness and rate tools">
+        <div className="calculator-special-section__heading">
+          <span className="group-kicker">READINESS &amp; RATE TOOLS</span>
+          <h2>Beyond the numbers</h2>
+        </div>
+        <div className="calculator-special-list">
+          <button type="button" className="calculator-special-card" onClick={() => openCalculator('preapproval')}>
+            <span className="calculator-special-card__icon"><ClipboardCheck size={22} /></span>
+            <span className="calculator-special-card__copy">
+              <strong>Pre-approval readiness checklist</strong>
+              <small>Document checklist with upload status, file viewing, and advisor review request.</small>
+            </span>
+            <span className="calculator-special-card__arrow"><ArrowRight size={18} /></span>
+          </button>
+          <button type="button" className="calculator-special-card" onClick={() => openCalculator('refi-watch')}>
+            <span className="calculator-special-card__icon calculator-special-card__icon--blue"><BellRing size={22} /></span>
+            <span className="calculator-special-card__copy">
+              <strong>Refi Watch</strong>
+              <small>Enter your current loan once; the hub flags when posted rates make a refinance break even.</small>
+            </span>
+            <span className="calculator-special-card__arrow"><ArrowRight size={18} /></span>
+          </button>
+        </div>
       </section>
 
       <section className="calculator-layout">

@@ -13,6 +13,8 @@ import { CalculatorIndex } from '../tabs/CalculatorIndex'
 import { OverviewTab } from '../tabs/OverviewTab'
 import { CalendarTab } from '../tabs/CalendarTab'
 import { ResourcesTab } from '../tabs/ResourcesTab'
+import { AboutTab } from '../tabs/AboutTab'
+import { MarketScannerTab } from '../tabs/MarketScannerTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 
 interface AppShellProps {
@@ -20,11 +22,12 @@ interface AppShellProps {
   onSignOut: () => Promise<void>
 }
 
-type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources'
+type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources' | 'about' | 'market-scanner'
 
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
- * standalone Calendar view, '#resources' routes to the Resources view, and
+ * standalone Calendar view, '#resources' routes to the Resources view,
+ * '#about' routes to About, '#market-scanner' routes to Market Scanner, and
  * any other hash (an explicit '#calculators' or a specific calculator id like
  * '#buyer-closing-costs') routes to the Calculators view so deep links and
  * "open this calculator" actions keep working.
@@ -34,6 +37,8 @@ function viewFromHash(): ActiveView {
   if (!hash || hash === 'overview') return 'overview'
   if (hash === 'calendar') return 'calendar'
   if (hash === 'resources') return 'resources'
+  if (hash === 'about') return 'about'
+  if (hash === 'market-scanner') return 'market-scanner'
   return 'calculators'
 }
 
@@ -84,6 +89,18 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
   function openResources() {
     window.location.hash = 'resources'
     setActiveView('resources')
+    setMobileNavOpen(false)
+  }
+
+  function openAbout() {
+    window.location.hash = 'about'
+    setActiveView('about')
+    setMobileNavOpen(false)
+  }
+
+  function openMarketScanner() {
+    window.location.hash = 'market-scanner'
+    setActiveView('market-scanner')
     setMobileNavOpen(false)
   }
 
@@ -157,14 +174,31 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           >
             Resources
           </a>
+          <a
+            href="#market-scanner"
+            className={activeView === 'market-scanner' ? 'is-active' : ''}
+            aria-current={activeView === 'market-scanner' ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              openMarketScanner()
+            }}
+          >
+            Market Scanner
+          </a>
+          <a
+            href="#about"
+            className={activeView === 'about' ? 'is-active' : ''}
+            aria-current={activeView === 'about' ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              openAbout()
+            }}
+          >
+            About
+          </a>
         </nav>
 
         <div className="sidebar__spacer" />
-
-        <nav className="secondary-nav" aria-label="Help and settings">
-          <a href="#help"><CircleHelp size={17} /> Help & support</a>
-          <a href="#settings"><Settings size={17} /> Settings</a>
-        </nav>
 
         <div className="sidebar__account">
           <button className="notification-button" aria-label="Notifications">
@@ -189,6 +223,12 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             {profileOpen && (
               <div className="profile-popover" role="menu">
                 <p>{user.email}</p>
+                <a role="menuitem" href="#help" onClick={() => setProfileOpen(false)}>
+                  <CircleHelp size={16} /> Help & support
+                </a>
+                <a role="menuitem" href="#settings" onClick={() => setProfileOpen(false)}>
+                  <Settings size={16} /> Settings
+                </a>
                 <button role="menuitem" onClick={() => void onSignOut()}>
                   <LogOut size={16} /> Sign out
                 </button>
@@ -224,8 +264,10 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           />
         )}
         {activeView === 'calendar' && <CalendarTab />}
-        {activeView === 'calculators' && <CalculatorIndex />}
+        {activeView === 'calculators' && <CalculatorIndex user={user} />}
         {activeView === 'resources' && <ResourcesTab user={user} />}
+        {activeView === 'about' && <AboutTab />}
+        {activeView === 'market-scanner' && <MarketScannerTab />}
       </div>
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />
