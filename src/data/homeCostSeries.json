@@ -1,0 +1,440 @@
+{
+  "layers": [
+    {
+      "id": "local",
+      "label": "Local",
+      "subtitle": "Bay Area",
+      "groups": [
+        {
+          "id": "bay-area-prices",
+          "label": "Prices",
+          "indicators": [
+            {
+              "id": "sf-case-shiller",
+              "seriesId": "SFXRSA",
+              "label": "SF Metro Home Price Index",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "sf-median-listing-price",
+              "seriesId": "MEDLISPRI41860",
+              "label": "SF Metro Median Listing Price",
+              "unit": "compactCurrency",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "san-jose-median-listing-price",
+              "seriesId": "MEDLISPRI41940",
+              "label": "San Jose Metro Median Listing Price",
+              "unit": "compactCurrency",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "bay-area-inventory",
+          "label": "Inventory",
+          "indicators": [
+            {
+              "id": "sf-listings",
+              "seriesId": "ACTLISCOU41860",
+              "label": "SF Metro Active Listings",
+              "unit": "count",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "san-jose-listings",
+              "seriesId": "ACTLISCOU41940",
+              "label": "San Jose Metro Active Listings",
+              "unit": "count",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "sf-days-on-market",
+              "seriesId": "MEDDAYONMAR41860",
+              "label": "SF Metro Median Days on Market",
+              "unit": "days",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "bay-area-labor-supply",
+          "label": "Labor and Supply",
+          "indicators": [
+            {
+              "id": "sf-unemployment",
+              "seriesId": "SANF806URN",
+              "label": "SF Metro Unemployment Rate",
+              "unit": "percent",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "san-jose-unemployment",
+              "seriesId": "SANJ906URN",
+              "label": "San Jose Metro Unemployment Rate",
+              "unit": "percent",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "sf-permits",
+              "seriesId": "SANF806BPPRIV",
+              "label": "SF-Oakland-Berkeley Building Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "san-jose-permits",
+              "seriesId": "SANJ906BPPRIV",
+              "label": "San Jose Metro Building Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "california",
+      "label": "Semi-Local",
+      "subtitle": "California",
+      "groups": [
+        {
+          "id": "california-state",
+          "label": "Statewide",
+          "indicators": [
+            {
+              "id": "ca-house-price-index",
+              "seriesId": "CASTHPI",
+              "label": "California House Price Index",
+              "unit": "index",
+              "cadence": "Quarterly"
+            },
+            {
+              "id": "ca-total-permits",
+              "seriesId": "CABPPRIV",
+              "label": "California Total Building Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "ca-single-family-permits",
+              "seriesId": "CABP1FH",
+              "label": "California Single-Family Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "california-metro-supply",
+          "label": "Major Metro Supply",
+          "indicators": [
+            {
+              "id": "la-permits",
+              "seriesId": "LOSA106BPPRIV",
+              "label": "LA-Long Beach-Anaheim Building Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "san-diego-permits",
+              "seriesId": "SAND706BPPRIV",
+              "label": "San Diego Metro Building Permits",
+              "unit": "count",
+              "cadence": "Monthly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "national",
+      "label": "National",
+      "subtitle": "U.S.",
+      "groups": [
+        {
+          "id": "rates-inflation",
+          "label": "Rates and Inflation",
+          "indicators": [
+            {
+              "id": "mortgage-30",
+              "seriesId": "MORTGAGE30US",
+              "label": "30-Year Fixed Mortgage Rate",
+              "unit": "percent",
+              "cadence": "Weekly"
+            },
+            {
+              "id": "mortgage-15",
+              "seriesId": "MORTGAGE15US",
+              "label": "15-Year Fixed Mortgage Rate",
+              "unit": "percent",
+              "cadence": "Weekly"
+            },
+            {
+              "id": "treasury-10y",
+              "seriesId": "DGS10",
+              "label": "10-Year Treasury Yield",
+              "unit": "percent",
+              "cadence": "Daily"
+            },
+            {
+              "id": "fed-funds",
+              "seriesId": "FEDFUNDS",
+              "label": "Federal Funds Rate",
+              "unit": "percent",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "cpi",
+              "seriesId": "CPIAUCSL",
+              "label": "Consumer Price Index",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "core-pce",
+              "seriesId": "PCEPILFE",
+              "label": "Core PCE Price Index",
+              "unit": "index",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "jobs-growth",
+          "label": "Jobs and Growth",
+          "indicators": [
+            {
+              "id": "unemployment-rate",
+              "seriesId": "UNRATE",
+              "label": "U.S. Unemployment Rate",
+              "unit": "percent",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "nonfarm-payrolls",
+              "seriesId": "PAYEMS",
+              "label": "Nonfarm Payrolls",
+              "unit": "thousands",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "jobless-claims",
+              "seriesId": "ICSA",
+              "label": "Initial Jobless Claims",
+              "unit": "count",
+              "cadence": "Weekly"
+            },
+            {
+              "id": "gdp-growth",
+              "seriesId": "A191RL1Q225SBEA",
+              "label": "Real GDP Growth Rate",
+              "unit": "percent",
+              "cadence": "Quarterly"
+            }
+          ]
+        },
+        {
+          "id": "new-homes",
+          "label": "New Homes",
+          "indicators": [
+            {
+              "id": "us-building-permits",
+              "seriesId": "PERMIT",
+              "label": "U.S. Building Permits",
+              "unit": "thousands",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "us-housing-starts",
+              "seriesId": "HOUST",
+              "label": "U.S. Housing Starts",
+              "unit": "thousands",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "new-home-sales",
+              "seriesId": "HSN1F",
+              "label": "New Single-Family Houses Sold",
+              "unit": "thousands",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "new-home-price",
+              "seriesId": "MSPNHSUS",
+              "label": "Median Sales Price of New Houses",
+              "unit": "currency",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "new-home-supply",
+              "seriesId": "MSACSR",
+              "label": "Monthly Supply of New Houses",
+              "unit": "months",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "construction-labor",
+          "label": "Construction Labor",
+          "indicators": [
+            {
+              "id": "construction-wages-eci",
+              "seriesId": "ECICONWAG",
+              "label": "Construction Wages Index",
+              "unit": "index",
+              "cadence": "Quarterly"
+            },
+            {
+              "id": "construction-compensation",
+              "seriesId": "CIU2012300000000I",
+              "label": "Construction Total Compensation",
+              "unit": "index",
+              "cadence": "Quarterly"
+            },
+            {
+              "id": "construction-hourly-earnings",
+              "seriesId": "CES2000000003",
+              "label": "Construction Hourly Earnings",
+              "unit": "dollarsPerHour",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "construction-inputs",
+          "label": "Construction Inputs",
+          "indicators": [
+            {
+              "id": "residential-construction-goods",
+              "seriesId": "WPUIP2311001",
+              "label": "Residential Construction Goods",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "residential-construction-services",
+              "seriesId": "WPUIP2311002",
+              "label": "Residential Construction Services",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "single-family-construction-services",
+              "seriesId": "WPUIP2311102",
+              "label": "Single-Family Construction Services",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "construction-materials",
+              "seriesId": "WPUSI012011",
+              "label": "Construction Materials",
+              "unit": "index",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "materials",
+          "label": "Materials",
+          "indicators": [
+            {
+              "id": "lumber",
+              "seriesId": "WPU081",
+              "label": "Lumber",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "softwood-lumber",
+              "seriesId": "WPU0811",
+              "label": "Softwood Lumber",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "ready-mix-concrete",
+              "seriesId": "PCU327320327320",
+              "label": "Ready-Mix Concrete",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "cement",
+              "seriesId": "PCU3273132731",
+              "label": "Cement",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "gypsum",
+              "seriesId": "PCU3274203274201",
+              "label": "Gypsum Building Materials",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "copper-wire-cable",
+              "seriesId": "WPU10260314",
+              "label": "Copper Wire and Cable",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "copper-products",
+              "seriesId": "WPUSI019011",
+              "label": "Copper Products",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "sand-gravel",
+              "seriesId": "WPS1321",
+              "label": "Sand, Gravel, Crushed Stone",
+              "unit": "index",
+              "cadence": "Monthly"
+            },
+            {
+              "id": "asphalt-roofing",
+              "seriesId": "PCU3241232412",
+              "label": "Asphalt Paving and Roofing",
+              "unit": "index",
+              "cadence": "Monthly"
+            }
+          ]
+        },
+        {
+          "id": "energy",
+          "label": "Energy",
+          "indicators": [
+            {
+              "id": "oil-wti",
+              "seriesId": "DCOILWTICO",
+              "label": "WTI Crude Oil",
+              "unit": "dollarsPerBarrel",
+              "cadence": "Daily"
+            },
+            {
+              "id": "natural-gas",
+              "seriesId": "DHHNGSP",
+              "label": "Henry Hub Natural Gas",
+              "unit": "dollarsPerMmbtu",
+              "cadence": "Daily"
+            },
+            {
+              "id": "gasoline",
+              "seriesId": "GASREGW",
+              "label": "Regular Gasoline",
+              "unit": "dollarsPerGallon",
+              "cadence": "Weekly"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

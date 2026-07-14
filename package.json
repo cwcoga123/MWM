@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "fetch:fred": "node scripts/fetch-fred-data.mjs"
+    "fetch:fred": "node scripts/fetch-fred-data.mjs",
+    "fetch:home-cost-history": "node scripts/fetch-home-cost-history.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

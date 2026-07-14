@@ -1,20 +1,13 @@
 /**
  * Curated calendar of upcoming dates that matter to a Bay Area mortgage
  * practice: national housing-data releases, the Fed/macro prints that move
- * mortgage rates, Bay Area–specific reports, and holidays/deadlines that
+ * mortgage rates, Bay Area-specific reports, and holidays/deadlines that
  * affect closings and escrow timing.
  *
- * Unlike src/data/fredIndicators.ts, most of these events don't have a free,
- * redistributable data feed (ISM's Services PMI/Prices/Employment indexes in
- * particular are licensed and not on FRED), so this file intentionally
- * tracks *when things happen* rather than trying to keep "Actual" values
- * current. Where an official schedule wasn't published yet, `estimated:
- * true` flags the date as a best estimate (see `note`) rather than a
- * confirmed one — verify against `sourceUrl` before relying on it for a
- * client conversation.
- *
- * Rendered by src/components/shared/RealEstateCalendar.tsx as an economic-
- * calendar-style table, grouped by category, ordered soonest-first.
+ * Unlike src/data/fredIndicators.ts, most of these events do not have a free,
+ * redistributable data feed, so this file tracks when things happen rather
+ * than trying to keep reported values current. Where an official schedule was
+ * not published yet, `estimated: true` flags the date as a best estimate.
  */
 export type CalendarCategory = 'housing-data' | 'fed-macro' | 'bay-area' | 'holidays'
 
@@ -22,20 +15,17 @@ export type CalendarImportance = 1 | 2 | 3
 
 export interface CalendarEvent {
   id: string
-  /** ISO date (YYYY-MM-DD) — the start date for multi-day events. */
   date: string
-  /** ISO end date, for multi-day events like an FOMC meeting. */
   endDate?: string
-  /** Local release time, Eastern — omitted for all-day items like holidays. */
   time?: string
   event: string
   category: CalendarCategory
   importance: CalendarImportance
   cadence: string
-  /** True if the date is a best estimate pending an official schedule confirmation — see `note`. */
   estimated?: boolean
   source: string
   sourceUrl: string
+  why: string
   note?: string
 }
 
@@ -47,7 +37,6 @@ export const calendarCategories: Record<CalendarCategory, string> = {
 }
 
 export const realEstateCalendarEvents: CalendarEvent[] = [
-  // --- National housing-data releases ---------------------------------
   {
     id: 'nar-existing-home-sales-jun',
     date: '2026-07-09',
@@ -58,6 +47,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Monthly',
     source: 'National Association of Realtors',
     sourceUrl: 'https://www.nar.realtor/research-and-statistics/housing-statistics/existing-home-sales',
+    why: 'Closed-sales volume shows how much buyer demand is actually making it through escrow.',
   },
   {
     id: 'nar-pending-home-sales-jun',
@@ -69,6 +59,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Monthly',
     source: 'National Association of Realtors',
     sourceUrl: 'https://www.nar.realtor/research-and-statistics/housing-statistics/pending-home-sales',
+    why: 'Contracts signed but not yet closed give a one-to-two-month preview of where sales are heading.',
   },
   {
     id: 'census-housing-starts-jun',
@@ -80,6 +71,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Monthly',
     source: 'U.S. Census Bureau',
     sourceUrl: 'https://www.census.gov/construction/nrc/',
+    why: 'New construction is a key supply signal for buyers competing over limited inventory.',
   },
   {
     id: 'census-new-home-sales-jun',
@@ -90,9 +82,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 2,
     cadence: 'Monthly',
     estimated: true,
-    note: 'Usually the week after Housing Starts — confirm the exact day on the Census release calendar.',
     source: 'U.S. Census Bureau',
     sourceUrl: 'https://www.census.gov/construction/nrc/',
+    why: 'Sales of newly built homes show whether builders are leading the market up or down.',
+    note: 'Usually the week after Housing Starts - confirm the exact day on the Census release calendar.',
   },
   {
     id: 'case-shiller-may',
@@ -102,10 +95,11 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     category: 'housing-data',
     importance: 2,
     cadence: 'Monthly',
-    note: 'Includes the SF and San Jose metro sub-indices used in Indicators Worth Watching, above.',
     source: 'S&P Dow Jones Indices',
     sourceUrl:
       'https://www.spglobal.com/spdji/en/index-family/indicators/sp-corelogic-case-shiller/sp-corelogic-case-shiller-composite/',
+    why: 'The most-watched home-price index includes the SF and San Jose metro sub-indices.',
+    note: 'Includes the SF and San Jose metro sub-indices used in Indicators Worth Watching.',
   },
   {
     id: 'freddie-mac-pmms',
@@ -117,6 +111,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Weekly (every Thursday)',
     source: 'Freddie Mac',
     sourceUrl: 'https://www.freddiemac.com/pmms',
+    why: "Freddie Mac's weekly average is the headline mortgage-rate benchmark in most news stories.",
   },
   {
     id: 'mba-mortgage-applications',
@@ -128,9 +123,8 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Weekly (every Wednesday)',
     source: 'Mortgage Bankers Association',
     sourceUrl: 'https://www.mba.org/news-and-research/newsroom/weekly-applications-survey',
+    why: 'A weekly pulse of mortgage demand that helps spot when buyers rush back in.',
   },
-
-  // --- Fed & macro events that move rates -----------------------------
   {
     id: 'cpi-jun',
     date: '2026-07-14',
@@ -141,6 +135,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Monthly',
     source: 'Bureau of Labor Statistics',
     sourceUrl: 'https://www.bls.gov/schedule/news_release/cpi.htm',
+    why: 'This inflation print can move mortgage rates the same morning, especially when it surprises.',
   },
   {
     id: 'jobless-claims-weekly',
@@ -152,18 +147,20 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Weekly (every Thursday)',
     source: 'U.S. Department of Labor',
     sourceUrl: 'https://www.dol.gov/ui/data.pdf',
+    why: 'Weekly labor-market surprises can nudge rate expectations before the monthly jobs report.',
   },
   {
     id: 'fomc-jul',
     date: '2026-07-28',
     endDate: '2026-07-29',
-    time: '2:00 PM ET decision · 2:30 PM press conf.',
+    time: '2:00 PM ET decision - 2:30 PM press conf.',
     event: 'FOMC Meeting & Rate Decision',
     category: 'fed-macro',
     importance: 3,
     cadence: '8x / year',
     source: 'Federal Reserve',
     sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    why: "The Fed's decision and press conference can reset rate expectations quickly if you are floating a lock.",
   },
   {
     id: 'pce-jun',
@@ -174,9 +171,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 3,
     cadence: 'Monthly',
     estimated: true,
-    note: 'BEA "Personal Income and Outlays" typically posts about a month after month-end — confirm on bea.gov.',
     source: 'Bureau of Economic Analysis',
     sourceUrl: 'https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy',
+    why: "The Fed's preferred inflation gauge is one of the biggest inputs into future rate expectations.",
+    note: 'BEA "Personal Income and Outlays" typically posts about a month after month-end - confirm on bea.gov.',
   },
   {
     id: 'ism-manufacturing-jul',
@@ -187,9 +185,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 2,
     cadence: 'Monthly (1st business day)',
     estimated: true,
-    note: 'Released the first business day of the month — confirm on the ISM report calendar.',
     source: 'Institute for Supply Management',
     sourceUrl: 'https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/',
+    why: 'Factory-sector weakness tends to pull rates down; strength can push yields higher.',
+    note: 'Released the first business day of the month - confirm on the ISM report calendar.',
   },
   {
     id: 'ism-services-jul',
@@ -200,9 +199,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 3,
     cadence: 'Monthly (3rd business day)',
     estimated: true,
-    note: 'Covers the Services PMI, Prices Index, and Employment Index together. Not on FRED (ISM restricts redistribution) — actual values aren’t tracked here, check ismworld.org when it drops.',
     source: 'Institute for Supply Management',
     sourceUrl: 'https://www.ismworld.org/supply-management-news-and-reports/reports/rob-report-calendar/',
+    why: 'Services data is a major inflation read because that side of the economy drives much of recent price pressure.',
+    note: 'Covers the Services PMI, Prices Index, and Employment Index together. Not on FRED; check ismworld.org when it drops.',
   },
   {
     id: 'jobs-report-jul',
@@ -213,12 +213,11 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 3,
     cadence: 'Monthly (1st Friday, usually)',
     estimated: true,
-    note: 'First Friday of the month — confirm on the BLS release schedule.',
     source: 'Bureau of Labor Statistics',
     sourceUrl: 'https://www.bls.gov/schedule/news_release/empsit.htm',
+    why: 'Strong hiring usually means higher rates; weak hiring can pull them lower.',
+    note: 'First Friday of the month - confirm on the BLS release schedule.',
   },
-
-  // --- Bay Area & local market dates -----------------------------------
   {
     id: 'edd-metro-unemployment',
     date: '2026-07-17',
@@ -227,9 +226,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 2,
     cadence: 'Monthly (~3rd Friday)',
     estimated: true,
-    note: 'EDD typically posts metro-level unemployment about 3 weeks after month-end — confirm on labormarketinfo.edd.ca.gov.',
     source: 'CA Employment Development Department',
     sourceUrl: 'https://labormarketinfo.edd.ca.gov/data/monthly-data-release.html',
+    why: 'Local job strength drives Bay Area housing demand more directly than many national signals.',
+    note: 'EDD typically posts metro-level unemployment about 3 weeks after month-end - confirm on labormarketinfo.edd.ca.gov.',
   },
   {
     id: 'car-monthly-report',
@@ -239,12 +239,11 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     importance: 1,
     cadence: 'Monthly',
     estimated: true,
-    note: 'Exact publish date varies month to month — see car.org for the current release.',
     source: 'California Association of Realtors',
     sourceUrl: 'https://www.car.org/marketdata',
+    why: 'Statewide and county-level prices, sales, and inventory give a quick read on the California market.',
+    note: 'Exact publish date varies month to month - see car.org for the current release.',
   },
-
-  // --- Holidays & closing deadlines -------------------------------------
   {
     id: 'labor-day-2026',
     date: '2026-09-07',
@@ -252,9 +251,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     category: 'holidays',
     importance: 1,
     cadence: 'Annual',
-    note: 'Banks and county recorder offices closed — build it into closing timelines.',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Banks and county recorder offices close, so wires and recordings need extra timeline padding.',
+    note: 'Banks and county recorder offices closed - build it into closing timelines.',
   },
   {
     id: 'columbus-day-2026',
@@ -265,6 +265,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Bank holiday closures can pause wires and recordings during escrow.',
   },
   {
     id: 'veterans-day-2026',
@@ -275,6 +276,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Bank holiday closures can pause wires and recordings during escrow.',
   },
   {
     id: 'thanksgiving-2026',
@@ -285,6 +287,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Bank holiday closures can pause wires and recordings during escrow.',
   },
   {
     id: 'ca-property-tax-1st-installment',
@@ -293,9 +296,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     category: 'holidays',
     importance: 2,
     cadence: 'Annual',
-    note: '10% penalty + admin cost applies after this date if the first installment is unpaid.',
     source: 'CA State Board of Equalization',
     sourceUrl: 'https://www.boe.ca.gov/proptaxes/calendar.htm',
+    why: 'A missed first installment can add a 10% penalty plus administrative cost.',
+    note: '10% penalty + admin cost applies after this date if the first installment is unpaid.',
   },
   {
     id: 'christmas-2026',
@@ -306,6 +310,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Bank holiday closures can pause wires and recordings during escrow.',
   },
   {
     id: 'new-years-2027',
@@ -316,6 +321,7 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'Federal Reserve holiday schedule',
     sourceUrl: 'https://www.federalreserve.gov/aboutthefed/k8.htm',
+    why: 'Bank holiday closures can pause wires and recordings during escrow.',
   },
   {
     id: 'ca-property-tax-2nd-installment',
@@ -324,9 +330,10 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     category: 'holidays',
     importance: 2,
     cadence: 'Annual',
-    note: '10% penalty + admin cost applies after this date if the second installment is unpaid.',
     source: 'CA State Board of Equalization',
     sourceUrl: 'https://www.boe.ca.gov/proptaxes/calendar.htm',
+    why: 'A missed second installment can add a 10% penalty plus administrative cost.',
+    note: '10% penalty + admin cost applies after this date if the second installment is unpaid.',
   },
   {
     id: 'tax-day-2027',
@@ -337,5 +344,6 @@ export const realEstateCalendarEvents: CalendarEvent[] = [
     cadence: 'Annual',
     source: 'IRS',
     sourceUrl: 'https://www.irs.gov/filing/when-to-file',
+    why: 'Lenders may ask for filed returns or extensions around this date.',
   },
 ]

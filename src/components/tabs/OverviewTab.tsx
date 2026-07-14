@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Home, Sparkles } f
 import type { HubUser } from '../shell/AuthGate'
 import { calculators } from '../../data/calculators'
 import { FredIndicatorsSection } from '../shared/FredIndicatorsSection'
+import { HomeCostHistorySection } from '../shared/HomeCostHistorySection'
 import { marketPulseInsights, type MarketPulseInsight } from '../../data/marketPulse'
 import { quickActions } from '../../data/quickActions'
 
@@ -166,6 +167,8 @@ export function OverviewTab({ user, onOpenCalculator, onOpenCalculators, onOpenA
       </section>
 
       <FredIndicatorsSection />
+
+      <HomeCostHistorySection />
 
       <section className="overview-section">
         <div className="overview-section__heading">

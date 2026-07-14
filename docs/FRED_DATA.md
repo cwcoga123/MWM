@@ -37,15 +37,23 @@ series is missing from the snapshot (for example, one request failed on the
 last refresh), that card just falls back to a plain link to FRED — the tab
 never breaks because of stale or partial data.
 
+The Home Cost Watch section uses a second static data file:
+`src/data/homeCostHistory.json`. It is generated from the catalog in
+`src/data/homeCostSeries.json` and renders simple 20-year line charts grouped
+as Local/Bay Area, Semi-Local/California, and National/U.S. The history script
+uses FRED's public CSV graph export, then samples daily and weekly series to
+month-end points so the client bundle stays small.
+
 ## Refreshing the data
 
 ```sh
 pnpm fetch:fred
+pnpm fetch:home-cost-history
 ```
 
-Run this whenever you want fresher numbers — before a deploy, on a schedule
-via CI, or manually. Commit the updated `src/data/fredSnapshot.json` so the
-deployed app serves the new values.
+Run these whenever you want fresher numbers - before a deploy, on a schedule
+via CI, or manually. Commit the updated `src/data/fredSnapshot.json` and
+`src/data/homeCostHistory.json` so the deployed app serves the new values.
 
 ## Adding or changing a series
 
@@ -61,3 +69,6 @@ deployed app serves the new values.
 
 `unit` controls formatting in `src/lib/formatFredValue.ts`: `percent`,
 `currency`, `days`, `count`, or `index`.
+
+For Home Cost Watch charts, add or edit the matching entry in
+`src/data/homeCostSeries.json`, then run `pnpm fetch:home-cost-history`.

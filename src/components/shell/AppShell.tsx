@@ -27,14 +27,15 @@ type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources' | 'about
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
  * standalone Calendar view, '#resources' routes to the Resources view,
- * '#about' routes to About, '#market-scanner' routes to Market Scanner, and
- * any other hash (an explicit '#calculators' or a specific calculator id like
+ * '#about' routes to About, '#market-scanner' routes to Market Scanner,
+ * known Overview section anchors stay on Overview, and any other hash
+ * (an explicit '#calculators' or a specific calculator id like
  * '#buyer-closing-costs') routes to the Calculators view so deep links and
  * "open this calculator" actions keep working.
  */
 function viewFromHash(): ActiveView {
   const hash = window.location.hash.slice(1)
-  if (!hash || hash === 'overview') return 'overview'
+  if (!hash || hash === 'overview' || hash === 'home-cost-watch') return 'overview'
   if (hash === 'calendar') return 'calendar'
   if (hash === 'resources') return 'resources'
   if (hash === 'about') return 'about'
