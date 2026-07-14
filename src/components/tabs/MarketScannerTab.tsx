@@ -278,8 +278,18 @@ const REPORTS: ReportDefinition[] = [
     label: 'Single Family vs Condo/Townhouse Trends',
     widgets: [
       {
+        id: 'sf-condo-msp-vs-lp',
+        title: 'Median Sale Price vs List Price',
+        customTitle: 'Sale price and list-price trend',
+        description: 'Single-family and condo/townhouse sale-price comparison.',
+        scriptVersion: '3.0',
+        widgetType: 'trends',
+        tokenId: 'defaultmspvslp',
+        classType: 'Residential - Single Family,Residential - Common Interest',
+      },
+      {
         id: 'sf-condo-dom-vs-lp',
-        title: 'Original Days on Market vs List Price',
+        title: 'Days on Market vs List Price',
         customTitle: 'Days on market and list-price strength',
         description: 'Single-family and condo/townhouse trend comparison from Aculist.',
         scriptVersion: '3.0',
@@ -289,7 +299,7 @@ const REPORTS: ReportDefinition[] = [
       },
       {
         id: 'sf-condo-ppsqft',
-        title: 'Original Price per Square Foot',
+        title: 'Price per Square Foot',
         customTitle: 'Price per square foot trend',
         description: 'Single-family and condo/townhouse price-per-square-foot comparison.',
         scriptVersion: '3.0',
@@ -743,11 +753,9 @@ function NativeTrendChart({
     <section className="market-native" aria-labelledby={`${definition.id}-custom-title`}>
       <div className="market-native__header">
         <div>
-          <span className="market-native__label">MWM VIEW</span>
           <h2 id={`${definition.id}-custom-title`}>{definition.customTitle}</h2>
           <p>{geography.label} - {periodSummary(period)} lookback.</p>
         </div>
-        <span className="market-native__status"><i /> Parsed from Aculist</span>
       </div>
 
       <div className="market-native__metrics">
@@ -888,11 +896,9 @@ function NativeKpiPanel({
     <section className="market-native" aria-labelledby={`${definition.id}-custom-title`}>
       <div className="market-native__header">
         <div>
-          <span className="market-native__label">MWM VIEW</span>
           <h2 id={`${definition.id}-custom-title`}>{definition.customTitle}</h2>
           <p>{geography.label}</p>
         </div>
-        <span className="market-native__status"><i /> Parsed from Aculist</span>
       </div>
 
       <div className="market-kpi-grid">
@@ -916,7 +922,6 @@ function CustomLoadingPanel({
 }) {
   return (
     <section className="market-native market-native--loading" aria-live="polite">
-      <span className="market-native__label">MWM VIEW</span>
       <h2>{dataUnavailable ? 'Custom chart unavailable' : 'Building custom chart...'}</h2>
       <p>
         {dataUnavailable
@@ -985,37 +990,28 @@ function AculistWidgetPair({
 
   return (
     <article className="market-widget-pair">
-      <section className="market-original" aria-labelledby={`${definition.id}-original-title`}>
-        <div className="market-original__heading">
-          <div>
-            <span>Original Aculist Chart</span>
-            <h2 id={`${definition.id}-original-title`}>{definition.title}</h2>
-          </div>
-          <small>{definition.description}</small>
-        </div>
-        <div className="market-original__frame">
-          <div
-            ref={widgetRef}
-            id={widgetId}
-            className="market-aculist-widget"
-            data-widgettype={definition.widgetType}
-            data-aculistwidget=""
-            data-geographytype={geography.type}
-            data-geographyname={geography.name}
-            data-county={geography.county}
-            data-colors={definition.widgetType === 'trends' ? ACULIST_COLORS : undefined}
-            data-period={definition.widgetType === 'trends' ? period.period : undefined}
-            data-periodtype={definition.widgetType === 'trends' ? period.type : undefined}
-            data-tokenid={definition.tokenId}
-            data-classtype={definition.classType}
-            data-usertoken={ACULIST_USER_TOKEN}
-            data-title="true"
-            data-displaycolumns={definition.displayColumns}
-            data-themecolor={definition.themeColor}
-            data-styleid={definition.styleId}
-          />
-        </div>
-      </section>
+      <div className="market-aculist-source" aria-hidden="true">
+        <div
+          ref={widgetRef}
+          id={widgetId}
+          className="market-aculist-widget"
+          data-widgettype={definition.widgetType}
+          data-aculistwidget=""
+          data-geographytype={geography.type}
+          data-geographyname={geography.name}
+          data-county={geography.county}
+          data-colors={definition.widgetType === 'trends' ? ACULIST_COLORS : undefined}
+          data-period={definition.widgetType === 'trends' ? period.period : undefined}
+          data-periodtype={definition.widgetType === 'trends' ? period.type : undefined}
+          data-tokenid={definition.tokenId}
+          data-classtype={definition.classType}
+          data-usertoken={ACULIST_USER_TOKEN}
+          data-title="true"
+          data-displaycolumns={definition.displayColumns}
+          data-themecolor={definition.themeColor}
+          data-styleid={definition.styleId}
+        />
+      </div>
 
       {definition.widgetType === 'trends' && trendData && (
         <NativeTrendChart data={trendData} definition={definition} geography={geography} period={period} />
@@ -1061,7 +1057,9 @@ function PeriodSplitControl({
         aria-label={`Choose ${PERIOD_LABELS[type].toLowerCase()} lookback`}
         aria-expanded={open}
       >
-        <span aria-hidden="true">v</span>
+        <svg className="market-period-split__arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </button>
       {open && (
         <div className="market-period-menu" role="menu">
@@ -1196,6 +1194,7 @@ export function MarketScannerTab() {
 
       <section className="market-control-panel" aria-label="Market scanner controls">
         <div className="market-search">
+          <span className="market-search__label">Location</span>
           <input
             type="text"
             value={searchValue}
@@ -1229,19 +1228,22 @@ export function MarketScannerTab() {
           {searchError && <p className="market-search__error">{searchError}</p>}
         </div>
 
-        <div className="market-period-controls" aria-label="Lookback period">
-          {(['Year', 'Quarter', 'Month'] as PeriodType[]).map((type) => (
-            <PeriodSplitControl
-              key={type}
-              type={type}
-              active={periodType === type}
-              value={periodByType[type]}
-              open={openPeriodType === type}
-              onChooseType={choosePeriodType}
-              onToggle={(nextType) => setOpenPeriodType((openType) => openType === nextType ? null : nextType)}
-              onChooseValue={choosePeriodValue}
-            />
-          ))}
+        <div className="market-period-group">
+          <span className="market-search__label">Lookback period</span>
+          <div className="market-period-controls" aria-label="Lookback period">
+            {(['Year', 'Quarter', 'Month'] as PeriodType[]).map((type) => (
+              <PeriodSplitControl
+                key={type}
+                type={type}
+                active={periodType === type}
+                value={periodByType[type]}
+                open={openPeriodType === type}
+                onChooseType={choosePeriodType}
+                onToggle={(nextType) => setOpenPeriodType((openType) => openType === nextType ? null : nextType)}
+                onChooseValue={choosePeriodValue}
+              />
+            ))}
+          </div>
         </div>
 
         <button
@@ -1250,7 +1252,7 @@ export function MarketScannerTab() {
           onClick={applyChanges}
           disabled={!hasPendingChanges}
         >
-          Apply Change
+          Update trends
         </button>
       </section>
 

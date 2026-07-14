@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowRight, ChevronLeft, ChevronRight, Home, Sparkles } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Home, Sparkles } from 'lucide-react'
 import type { HubUser } from '../shell/AuthGate'
 import { calculators } from '../../data/calculators'
 import { FredIndicatorsSection } from '../shared/FredIndicatorsSection'
@@ -131,6 +131,28 @@ export function OverviewTab({ user, onOpenCalculator, onOpenCalculators, onOpenA
 
         </div>
       </header>
+
+      <section className="about-hero overview-welcome" aria-labelledby="overview-welcome-title">
+        <div className="about-hero__copy">
+          <p className="eyebrow">WELCOME TO MWM</p>
+          <h1 id="overview-welcome-title">A more confident way home.</h1>
+          <p className="about-hero__lede">
+            Your client hub brings the numbers, context, and next steps together so every move feels a little clearer.
+          </p>
+          <div className="about-hero__actions">
+            <a className="about-button about-button--primary" href="#market-scanner">
+              Explore market trends <ArrowUpRight size={15} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+
+        <div className="about-hero__mark" aria-label="MWM Client Hub">
+          <span className="about-hero__mark-ring" aria-hidden="true" />
+          <span className="about-hero__mark-letter">M</span>
+          <span className="about-hero__mark-caption">Bay Area Realtor® · Service for a lifetime</span>
+          <Sparkles className="about-hero__spark" size={18} aria-hidden="true" />
+        </div>
+      </section>
 
       <section className="overview-section">
         <div className="overview-section__heading">

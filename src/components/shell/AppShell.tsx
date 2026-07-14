@@ -183,7 +183,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
               openMarketScanner()
             }}
           >
-            Market Scanner
+            Trends
           </a>
           <a
             href="#about"
