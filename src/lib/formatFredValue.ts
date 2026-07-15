@@ -2,17 +2,46 @@ import type { FredIndicatorUnit } from '../data/fredIndicators'
 
 /** Formats a raw FRED observation value for display, based on the series' unit. */
 export function formatFredValue(unit: FredIndicatorUnit, value: number): string {
+  const formatDecimal = (digits = 1) =>
+    value.toLocaleString('en-US', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    })
+
   switch (unit) {
     case 'percent':
       return `${value.toFixed(2)}%`
     case 'currency':
       return `$${Math.round(value).toLocaleString('en-US')}`
+    case 'compactCurrency':
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(value)
     case 'days':
       return `${Math.round(value)} days`
+    case 'dollarsPerBarrel':
+      return `$${formatDecimal(2)}/bbl`
+    case 'dollarsPerGallon':
+      return `$${formatDecimal(2)}/gal`
+    case 'dollarsPerHour':
+      return `$${formatDecimal(2)}/hr`
+    case 'dollarsPerMmbtu':
+      return `$${formatDecimal(2)}/MMBtu`
     case 'count':
       return Math.round(value).toLocaleString('en-US')
     case 'index':
       return value.toFixed(1)
+    case 'months':
+      return `${formatDecimal(1)} mo`
+    case 'thousands':
+      return value >= 10000
+        ? `${(value / 1000).toLocaleString('en-US', {
+            maximumFractionDigits: 1,
+          })}M`
+        : `${Math.round(value).toLocaleString('en-US')}K`
     default:
       return String(value)
   }

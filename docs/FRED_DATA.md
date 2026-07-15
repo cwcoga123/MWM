@@ -44,6 +44,12 @@ as Local/Bay Area, Semi-Local/California, and National/U.S. The history script
 uses FRED's public CSV graph export, then samples daily and weekly series to
 month-end points so the client bundle stays small.
 
+CPI is a special display case. The stored source is FRED `CPIAUCNS`, the
+not-seasonally-adjusted CPI-U all-items index from BLS. The app converts that
+index to the 12-month percent change for display so clients see the same kind
+of headline number BLS reports in the monthly CPI release, while the raw index
+remains visible in the detail metadata.
+
 ## Refreshing the data
 
 ```sh

@@ -3,7 +3,7 @@ import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Home, Sparkles } f
 import type { HubUser } from '../shell/AuthGate'
 import { calculators } from '../../data/calculators'
 import { FredIndicatorsSection } from '../shared/FredIndicatorsSection'
-import { HomeCostHistorySection } from '../shared/HomeCostHistorySection'
+import { CostWatchOverviewStrip } from './CostWatchTab'
 import { marketPulseInsights, type MarketPulseInsight } from '../../data/marketPulse'
 import { quickActions } from '../../data/quickActions'
 
@@ -11,6 +11,7 @@ interface OverviewTabProps {
   user: HubUser
   onOpenCalculator: (calculatorId: string) => void
   onOpenCalculators: () => void
+  onOpenCostWatch: (indicatorId?: string) => void
   onOpenAdvisorCard: () => void
 }
 
@@ -121,7 +122,13 @@ function QuickActionsCarousel({ onOpenCalculator }: { onOpenCalculator: (calcula
   )
 }
 
-export function OverviewTab({ user, onOpenCalculator, onOpenCalculators, onOpenAdvisorCard }: OverviewTabProps) {
+export function OverviewTab({
+  user,
+  onOpenCalculator,
+  onOpenCalculators,
+  onOpenCostWatch,
+  onOpenAdvisorCard,
+}: OverviewTabProps) {
   return (
     <main className="mortgage-page overview-page" id="overview">
       <header className="mortgage-heading">
@@ -168,7 +175,7 @@ export function OverviewTab({ user, onOpenCalculator, onOpenCalculators, onOpenA
 
       <FredIndicatorsSection />
 
-      <HomeCostHistorySection />
+      <CostWatchOverviewStrip onOpenCostWatch={onOpenCostWatch} />
 
       <section className="overview-section">
         <div className="overview-section__heading">

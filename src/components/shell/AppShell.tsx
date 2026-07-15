@@ -15,6 +15,7 @@ import { CalendarTab } from '../tabs/CalendarTab'
 import { ResourcesTab } from '../tabs/ResourcesTab'
 import { AboutTab } from '../tabs/AboutTab'
 import { MarketScannerTab } from '../tabs/MarketScannerTab'
+import { CostWatchTab } from '../tabs/CostWatchTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 
 interface AppShellProps {
@@ -22,7 +23,14 @@ interface AppShellProps {
   onSignOut: () => Promise<void>
 }
 
-type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources' | 'about' | 'market-scanner'
+type ActiveView =
+  | 'overview'
+  | 'calendar'
+  | 'calculators'
+  | 'resources'
+  | 'about'
+  | 'market-scanner'
+  | 'cost-watch'
 
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
@@ -35,7 +43,8 @@ type ActiveView = 'overview' | 'calendar' | 'calculators' | 'resources' | 'about
  */
 function viewFromHash(): ActiveView {
   const hash = window.location.hash.slice(1)
-  if (!hash || hash === 'overview' || hash === 'home-cost-watch') return 'overview'
+  if (!hash || hash === 'overview') return 'overview'
+  if (hash === 'cost-watch' || hash === 'home-cost-watch' || hash.startsWith('cost-watch/')) return 'cost-watch'
   if (hash === 'calendar') return 'calendar'
   if (hash === 'resources') return 'resources'
   if (hash === 'about') return 'about'
@@ -102,6 +111,12 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
   function openMarketScanner() {
     window.location.hash = 'market-scanner'
     setActiveView('market-scanner')
+    setMobileNavOpen(false)
+  }
+
+  function openCostWatch(indicatorId?: string) {
+    window.location.hash = indicatorId ? `cost-watch/${indicatorId}` : 'cost-watch'
+    setActiveView('cost-watch')
     setMobileNavOpen(false)
   }
 
@@ -187,6 +202,17 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             Trends
           </a>
           <a
+            href="#cost-watch"
+            className={activeView === 'cost-watch' ? 'is-active' : ''}
+            aria-current={activeView === 'cost-watch' ? 'page' : undefined}
+            onClick={(event) => {
+              event.preventDefault()
+              openCostWatch()
+            }}
+          >
+            Cost Watch
+          </a>
+          <a
             href="#about"
             className={activeView === 'about' ? 'is-active' : ''}
             aria-current={activeView === 'about' ? 'page' : undefined}
@@ -261,6 +287,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             user={user}
             onOpenCalculator={openCalculatorFromOverview}
             onOpenCalculators={openCalculators}
+            onOpenCostWatch={openCostWatch}
             onOpenAdvisorCard={() => setAdvisorCardOpen(true)}
           />
         )}
@@ -269,6 +296,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
         {activeView === 'resources' && <ResourcesTab user={user} />}
         {activeView === 'about' && <AboutTab />}
         {activeView === 'market-scanner' && <MarketScannerTab />}
+        {activeView === 'cost-watch' && <CostWatchTab />}
       </div>
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />

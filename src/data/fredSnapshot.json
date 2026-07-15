@@ -58,19 +58,23 @@
       ]
     },
     "cpi": {
-      "seriesId": "CPIAUCSL",
-      "value": 333.979,
-      "date": "2026-05-01",
-      "previousValue": 332.407,
-      "previousDate": "2026-04-01",
+      "seriesId": "CPIAUCNS",
+      "value": 333.952,
+      "date": "2026-06-01",
+      "previousValue": 335.123,
+      "previousDate": "2026-05-01",
       "recentTrend": [
-        { "date": "2025-12-01", "value": 326.031 },
-        { "date": "2026-01-01", "value": 326.588 },
-        { "date": "2026-02-01", "value": 327.460 },
-        { "date": "2026-03-01", "value": 330.293 },
-        { "date": "2026-04-01", "value": 332.407 },
-        { "date": "2026-05-01", "value": 333.979 }
-      ]
+        { "date": "2026-01-01", "value": 325.252 },
+        { "date": "2026-02-01", "value": 326.785 },
+        { "date": "2026-03-01", "value": 330.213 },
+        { "date": "2026-04-01", "value": 333.020 },
+        { "date": "2026-05-01", "value": 335.123 },
+        { "date": "2026-06-01", "value": 333.952 }
+      ],
+      "displayValue": 3.5314250637863904,
+      "displayPreviousValue": 4.248674039164455,
+      "displayUnit": "percent",
+      "displayDigits": 1
     },
     "core-pce": {
       "seriesId": "PCEPILFE",

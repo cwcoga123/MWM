@@ -12,7 +12,21 @@
  */
 export type FredIndicatorCategory = 'rates' | 'fed-watch' | 'bay-area-housing' | 'local-economy'
 
-export type FredIndicatorUnit = 'percent' | 'currency' | 'index' | 'days' | 'count'
+export type FredIndicatorUnit =
+  | 'compactCurrency'
+  | 'count'
+  | 'currency'
+  | 'days'
+  | 'dollarsPerBarrel'
+  | 'dollarsPerGallon'
+  | 'dollarsPerHour'
+  | 'dollarsPerMmbtu'
+  | 'index'
+  | 'months'
+  | 'percent'
+  | 'thousands'
+
+export type FredIndicatorDisplay = 'yearOverYearPercent'
 
 /** 1 = low, 2 = medium, 3 = high — drives the star rating in the Imp. column. */
 export type FredIndicatorImportance = 1 | 2 | 3
@@ -36,6 +50,8 @@ export interface FredIndicator {
   fredUrl: string
   category: FredIndicatorCategory
   unit: FredIndicatorUnit
+  /** Optional client-facing display transform for raw index series. */
+  display?: FredIndicatorDisplay
   importance: FredIndicatorImportance
 }
 
@@ -109,17 +125,18 @@ export const fredIndicators: FredIndicator[] = [
   },
   {
     id: 'cpi',
-    seriesId: 'CPIAUCSL',
-    label: 'Consumer Price Index',
+    seriesId: 'CPIAUCNS',
+    label: 'Headline CPI YoY',
     cadence: 'Monthly',
-    what: 'Index of prices paid for a broad basket of consumer goods and services.',
+    what: '12-month change in the not-seasonally-adjusted CPI-U all-items index for the U.S. city average.',
     why: 'Headline inflation — a hot print pushes back Fed rate cuts.',
-    watchFor: 'The month-over-month core reading — that\'s what the Fed and bond market react to most.',
+    watchFor: 'The month-over-month headline and core readings — that is what the bond market reacts to first.',
     impact: 'A cooler-than-expected print is usually the single biggest one-day driver of lower mortgage rates.',
     releaseTime: '8:30 AM ET',
-    fredUrl: 'https://fred.stlouisfed.org/series/CPIAUCSL',
+    fredUrl: 'https://fred.stlouisfed.org/series/CPIAUCNS',
     category: 'fed-watch',
     unit: 'index',
+    display: 'yearOverYearPercent',
     importance: 3,
   },
   {

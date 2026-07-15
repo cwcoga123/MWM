@@ -49,7 +49,7 @@ const SERIES = [
   { id: 'mortgage-15', seriesId: 'MORTGAGE15US', weekly: true },
   { id: 'treasury-10y', seriesId: 'DGS10' },
   { id: 'fed-funds', seriesId: 'FEDFUNDS' },
-  { id: 'cpi', seriesId: 'CPIAUCSL' },
+  { id: 'cpi', seriesId: 'CPIAUCNS', display: 'yearOverYearPercent' },
   { id: 'core-pce', seriesId: 'PCEPILFE' },
   { id: 'unemployment-rate', seriesId: 'UNRATE' },
   { id: 'nonfarm-payrolls', seriesId: 'PAYEMS' },
@@ -104,6 +104,36 @@ function bucketByMonth(observations) {
   return [...buckets.values()]
 }
 
+function yearAgoMonthKey(isoDate) {
+  const date = new Date(`${isoDate}T00:00:00Z`)
+  date.setUTCFullYear(date.getUTCFullYear() - 1)
+  return date.toISOString().slice(0, 7)
+}
+
+function yearOverYearPercent(point, observationsByMonth) {
+  const yearAgo = observationsByMonth.get(yearAgoMonthKey(point.date))
+  if (!yearAgo || yearAgo.value === 0) return undefined
+
+  return ((point.value - yearAgo.value) / Math.abs(yearAgo.value)) * 100
+}
+
+function buildDisplayFields(display, observations, latest, previous) {
+  if (display !== 'yearOverYearPercent') return {}
+
+  const observationsByMonth = new Map(observations.map((observation) => [observation.date.slice(0, 7), observation]))
+  const displayValue = yearOverYearPercent(latest, observationsByMonth)
+  const displayPreviousValue = yearOverYearPercent(previous, observationsByMonth)
+
+  if (displayValue === undefined || displayPreviousValue === undefined) return {}
+
+  return {
+    displayValue,
+    displayPreviousValue,
+    displayUnit: 'percent',
+    displayDigits: 1,
+  }
+}
+
 async function fetchSeriesHistory(seriesId, apiKey, { weekly = false } = {}) {
   const url = new URL('https://api.stlouisfed.org/fred/series/observations')
   url.searchParams.set('series_id', seriesId)
@@ -133,7 +163,7 @@ async function fetchSeriesHistory(seriesId, apiKey, { weekly = false } = {}) {
     ? observations.slice(-TREND_WEEKS)
     : bucketByMonth(observations).slice(-TREND_MONTHS)
 
-  return { latest, previous, recentTrend }
+  return { latest, previous, recentTrend, observations }
 }
 
 async function main() {
@@ -149,9 +179,9 @@ async function main() {
   const values = {}
   const errors = []
 
-  for (const { id, seriesId, weekly } of SERIES) {
+  for (const { id, seriesId, weekly, display } of SERIES) {
     try {
-      const { latest, previous, recentTrend } = await fetchSeriesHistory(seriesId, apiKey, { weekly })
+      const { latest, previous, recentTrend, observations } = await fetchSeriesHistory(seriesId, apiKey, { weekly })
       values[id] = {
         seriesId,
         value: latest.value,
@@ -159,6 +189,7 @@ async function main() {
         previousValue: previous.value,
         previousDate: previous.date,
         recentTrend,
+        ...buildDisplayFields(display, observations, latest, previous),
       }
       console.log(`✓ ${id} (${seriesId}): ${latest.value} as of ${latest.date} (prev ${previous.value} on ${previous.date})`)
     } catch (error) {

@@ -1,7 +1,12 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Minus, TrendingDown, TrendingUp, ArrowUpRight, HelpCircle, Star } from 'lucide-react'
-import { fredIndicatorCategories, fredIndicators, type FredIndicatorCategory } from '../../data/fredIndicators'
+import {
+  fredIndicatorCategories,
+  fredIndicators,
+  type FredIndicatorCategory,
+  type FredIndicatorUnit,
+} from '../../data/fredIndicators'
 import fredSnapshot from '../../data/fredSnapshot.json'
 import { getNextRelease } from '../../lib/nextRelease'
 import {
@@ -18,6 +23,10 @@ interface FredSnapshotEntry {
   previousValue: number
   previousDate: string
   recentTrend: { date: string; value: number }[]
+  displayValue?: number
+  displayPreviousValue?: number
+  displayUnit?: FredIndicatorUnit
+  displayDigits?: number
 }
 
 const fredSnapshotValues = fredSnapshot.values as Record<string, FredSnapshotEntry>
@@ -27,6 +36,24 @@ const TREND_ICON: Record<FredTrendDirection, typeof TrendingUp> = {
   up: TrendingUp,
   down: TrendingDown,
   flat: Minus,
+}
+
+function getActualValue(snapshotValue: FredSnapshotEntry) {
+  return snapshotValue.displayValue ?? snapshotValue.value
+}
+
+function getPreviousValue(snapshotValue: FredSnapshotEntry) {
+  return snapshotValue.displayPreviousValue ?? snapshotValue.previousValue
+}
+
+function formatSnapshotValue(indicatorUnit: FredIndicatorUnit, snapshotValue: FredSnapshotEntry, value: number) {
+  const unit = snapshotValue.displayUnit ?? indicatorUnit
+
+  if (unit === 'percent' && typeof snapshotValue.displayDigits === 'number') {
+    return `${value.toFixed(snapshotValue.displayDigits)}%`
+  }
+
+  return formatFredValue(unit, value)
 }
 
 /** Renders a 3-star importance rating, e.g. ★★☆ for importance 2. */
@@ -166,7 +193,7 @@ export function FredIndicatorsSection() {
                   {indicatorsInCategory.map((indicator) => {
                     const snapshotValue = fredSnapshotValues[indicator.id]
                     const direction: FredTrendDirection = snapshotValue
-                      ? getTrendDirection(snapshotValue.value, snapshotValue.previousValue)
+                      ? getTrendDirection(getActualValue(snapshotValue), getPreviousValue(snapshotValue))
                       : 'flat'
                     const TrendIcon = TREND_ICON[direction]
                     const nextRelease = getNextRelease(indicator, snapshotValue?.date)
@@ -205,7 +232,7 @@ export function FredIndicatorsSection() {
                         <td className={`econ-table__actual econ-table__cell--right econ-table__actual--${direction}`}>
                           {snapshotValue ? (
                             <>
-                              {formatFredValue(indicator.unit, snapshotValue.value)}
+                              {formatSnapshotValue(indicator.unit, snapshotValue, getActualValue(snapshotValue))}
                               <TrendIcon size={11} />
                             </>
                           ) : (
@@ -214,7 +241,9 @@ export function FredIndicatorsSection() {
                         </td>
                         <td className="econ-table__muted econ-table__cell--right">—</td>
                         <td className="econ-table__muted econ-table__cell--right">
-                          {snapshotValue ? formatFredValue(indicator.unit, snapshotValue.previousValue) : '—'}
+                          {snapshotValue
+                            ? formatSnapshotValue(indicator.unit, snapshotValue, getPreviousValue(snapshotValue))
+                            : '—'}
                         </td>
                         <td className="econ-table__cell--link">
                           <a

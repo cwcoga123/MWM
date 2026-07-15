@@ -188,9 +188,10 @@
             },
             {
               "id": "cpi",
-              "seriesId": "CPIAUCSL",
-              "label": "Consumer Price Index",
+              "seriesId": "CPIAUCNS",
+              "label": "Headline CPI YoY",
               "unit": "index",
+              "display": "yearOverYearPercent",
               "cadence": "Monthly"
             },
             {
