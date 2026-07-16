@@ -7,6 +7,11 @@ import {
   type AccountRole,
 } from '../../lib/accounts'
 import {
+  defaultOverviewDemoAccount,
+  findOverviewDemoAccount,
+  type ClientState,
+} from '../../data/overviewPersonalization'
+import {
   isSupabaseConfigured,
   supabase,
   supabaseConfigurationError,
@@ -16,6 +21,8 @@ export interface HubUser {
   email: string
   name: string
   role: AccountRole
+  clientState?: ClientState
+  overviewProfileId?: string
 }
 
 interface AuthGateProps {
@@ -53,6 +60,13 @@ function readRedirectError() {
   window.history.replaceState({}, document.title, cleanUrl)
 
   return description.replaceAll('+', ' ')
+}
+
+function readDemoAccount() {
+  const params = new URLSearchParams(window.location.search)
+  const requested = params.get('demo') ?? params.get('account')
+
+  return findOverviewDemoAccount(requested) ?? defaultOverviewDemoAccount
 }
 
 function friendlyAuthError(message: string) {
@@ -191,8 +205,16 @@ export function AuthGate({ children }: AuthGateProps) {
   }
 
   if (allowDevBypass) {
+    const demoAccount = readDemoAccount()
+
     return children(
-      { name: 'Alex Morgan', email: 'alex@mwm.local', role: 'client' },
+      {
+        name: demoAccount.name,
+        email: demoAccount.email,
+        role: 'client',
+        clientState: demoAccount.clientState,
+        overviewProfileId: demoAccount.id,
+      },
       async () => undefined,
     )
   }
