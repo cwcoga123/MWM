@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, BellRing } from 'lucide-react'
 import type { HubUser } from '../shell/AuthGate'
 import { calculators } from '../../data/calculators'
 import { quickActions } from '../../data/quickActions'
@@ -22,6 +22,7 @@ import {
   getRangePoints,
   type HistoryPoint,
 } from '../../lib/homeCostWatch'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface OverviewTabProps {
   user: HubUser
@@ -44,12 +45,12 @@ interface MarketSnapshot {
   }
   inventory: {
     changeLabel: string
+    percent: number
     points: HistoryPoint[]
   }
   updatedLabel: string
 }
 
-const RECENT_CALCULATORS_KEY_PREFIX = 'mwm.recentCalculators.'
 const calculatorIds = new Set(calculators.map((calculator) => calculator.id))
 const quickActionFallbackIds = quickActions.map((action) => action.calculatorId).slice(0, 2)
 
@@ -157,55 +158,108 @@ function uniqueValidCalculatorIds(ids: string[]) {
   return Array.from(new Set(ids)).filter((id) => calculatorIds.has(id))
 }
 
-function recentStorageKey(profileId: string) {
-  return `${RECENT_CALCULATORS_KEY_PREFIX}${profileId}`
-}
-
 function readRecentCalculatorIds(profile: OverviewClientProfile) {
   const fallback = uniqueValidCalculatorIds(profile.recentCalculatorIds).length
     ? uniqueValidCalculatorIds(profile.recentCalculatorIds)
     : uniqueValidCalculatorIds(quickActionFallbackIds)
 
-  try {
-    const stored = window.localStorage.getItem(recentStorageKey(profile.id))
-    if (!stored) return fallback
-
-    const parsed = JSON.parse(stored)
-    if (!Array.isArray(parsed)) return fallback
-
-    const valid = uniqueValidCalculatorIds(parsed.filter((id): id is string => typeof id === 'string'))
-    return valid.length ? valid.slice(0, 4) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function rememberRecentCalculator(profileId: string, calculatorId: string) {
-  try {
-    const current = JSON.parse(window.localStorage.getItem(recentStorageKey(profileId)) ?? '[]')
-    const currentIds = Array.isArray(current) ? current.filter((id): id is string => typeof id === 'string') : []
-    const nextIds = uniqueValidCalculatorIds([calculatorId, ...currentIds]).slice(0, 4)
-
-    window.localStorage.setItem(recentStorageKey(profileId), JSON.stringify(nextIds))
-  } catch {
-    window.localStorage.setItem(recentStorageKey(profileId), JSON.stringify([calculatorId]))
-  }
+  return fallback.slice(0, 4)
 }
 
 function currentOverviewProfile(user: HubUser) {
-  const demoProfile = findOverviewDemoAccount(user.overviewProfileId) ?? findOverviewDemoAccount(user.email)
+  const demoProfile = user.isDemo
+    ? findOverviewDemoAccount(user.overviewProfileId) ?? findOverviewDemoAccount(user.email)
+    : null
   if (demoProfile) return demoProfile
 
   const stateTemplate =
-    overviewDemoAccounts.find((account) => account.clientState === (user.clientState ?? 'browsing')) ??
+    overviewDemoAccounts.find((account) => account.clientState === user.clientState) ??
     defaultOverviewDemoAccount
-
-  return {
+  const neighborhoods = user.neighborhoods.length
+    ? user.neighborhoods
+    : stateTemplate.preferences.neighborhoods
+  const targetBudget =
+    user.targetBudget ??
+    stateTemplate.search?.targetBudget ??
+    stateTemplate.escrow?.budget ??
+    950_000
+  const liveProfile: OverviewClientProfile = {
     ...stateTemplate,
-    id: `live-${user.email}`,
+    id: user.id,
     email: user.email,
     name: user.name,
+    clientState: user.clientState,
+    advisorNote: user.advisorNote,
+    recentCalculatorIds: user.recentCalculatorIds,
+    preferences: {
+      ...stateTemplate.preferences,
+      neighborhoods,
+      budgetStyle: user.targetBudget ? 'Advisor-set target budget' : stateTemplate.preferences.budgetStyle,
+      riskPosture: user.refiThreshold ? 'Rate watch configured' : stateTemplate.preferences.riskPosture,
+    },
   }
+
+  if (user.clientState === 'house-hunting') {
+    liveProfile.search = {
+      matchNeighborhood: neighborhoods[0] ?? 'your saved area',
+      newMatches: 2,
+      preApproved: Math.round(targetBudget * 1.18),
+      targetBudget,
+      targetPaymentInputs: {
+        homePrice: targetBudget,
+        downPayment: Math.round(targetBudget * 0.2),
+        amortizationYears: 30,
+        annualPropertyTax: Math.round(targetBudget * 0.0086),
+        annualHomeInsurance: 1300,
+        monthlyHoa: 0,
+      },
+      watchlist: neighborhoods.slice(0, 3).map((area, index) => ({
+        name: area,
+        medianPrice: Math.round(targetBudget * (1 + index * 0.06)),
+        monthlyDelta: index === 0 ? 1.1 : 0.7,
+      })),
+      openHousesSaved: 3,
+      openHouseWindow: 'This weekend',
+    }
+  }
+
+  if (user.clientState === 'in-escrow') {
+    const closingDate = user.closingDate ?? stateTemplate.escrow?.closingDate ?? '2026-08-21'
+    const lockedRate = user.lockedRate ?? stateTemplate.escrow?.lockedRate ?? 6.25
+
+    liveProfile.escrow = {
+      address: neighborhoods[0] ?? stateTemplate.escrow?.address ?? 'Target property',
+      lockedRate,
+      lockExpiresOn: closingDate,
+      closingDate,
+      appraisalAt: `${closingDate}T09:00:00`,
+      budget: targetBudget,
+      paymentInputs: {
+        homePrice: targetBudget,
+        downPayment: Math.round(targetBudget * 0.2),
+        annualInterestRate: lockedRate,
+        amortizationYears: 30,
+        annualPropertyTax: Math.round(targetBudget * 0.0086),
+        annualHomeInsurance: 1300,
+        monthlyHoa: 0,
+      },
+    }
+  }
+
+  if (user.clientState === 'homeowner') {
+    const estimatedValue = Math.round(targetBudget * 1.1)
+
+    liveProfile.homeowner = {
+      address: neighborhoods[0] ?? stateTemplate.homeowner?.address ?? 'Saved property',
+      estimatedValue,
+      valueGrowthPercent: stateTemplate.homeowner?.valueGrowthPercent ?? 3.2,
+      refiAlertRate: user.refiThreshold ?? stateTemplate.homeowner?.refiAlertRate ?? 6,
+      remainingBalance: Math.round(estimatedValue * 0.68),
+      equityGainThisYear: Math.round(estimatedValue * 0.04),
+    }
+  }
+
+  return liveProfile
 }
 
 function buildSparklinePath(points: HistoryPoint[], width: number, height: number) {
@@ -274,6 +328,7 @@ function buildMarketSnapshot(): MarketSnapshot {
     },
     inventory: {
       changeLabel: formatSignedPercent(inventoryPercent),
+      percent: inventoryPercent,
       points: inventoryPoints,
     },
     updatedLabel: updatedLabel(fredSnapshot.generatedAt),
@@ -309,6 +364,71 @@ function heroCopy(profile: OverviewClientProfile, market: MarketSnapshot) {
     title: `${greeting}, ${name} - rates dipped while you were away.`,
     subline: `No hurry on anything. Today's 30-year rate is ${market.rate.value.toFixed(2)}%, and this is the lay of the land.`,
   }
+}
+
+interface ClientAlert {
+  id: string
+  title: string
+  detail: string
+}
+
+function buildClientAlerts(
+  user: HubUser,
+  profile: OverviewClientProfile,
+  market: MarketSnapshot,
+): ClientAlert[] {
+  const alerts: ClientAlert[] = []
+  const refiThreshold = user.refiThreshold ?? profile.homeowner?.refiAlertRate
+  const lockDate = profile.escrow?.lockExpiresOn ?? user.closingDate
+  const targetArea = profile.preferences.neighborhoods[0]
+
+  if (refiThreshold !== null && refiThreshold !== undefined && market.rate.value <= refiThreshold) {
+    alerts.push({
+      id: 'rate-threshold',
+      title: 'Rate dropped below your watch threshold',
+      detail: `30-year rate is ${market.rate.value.toFixed(2)}%; your watch threshold is ${refiThreshold.toFixed(2)}%.`,
+    })
+  }
+
+  if (profile.clientState === 'in-escrow' && lockDate) {
+    const days = daysUntil(lockDate)
+
+    if (days <= 10) {
+      alerts.push({
+        id: 'lock-expiry',
+        title: days === 10 ? 'Lock expires in 10 days' : `Lock expires in ${days} days`,
+        detail: `Locked at ${(user.lockedRate ?? profile.escrow?.lockedRate ?? 0).toFixed(2)}% through ${formatShortDate(lockDate)}.`,
+      })
+    }
+  }
+
+  if (targetArea && market.inventory.percent > 0) {
+    alerts.push({
+      id: 'inventory-up',
+      title: 'Inventory is up in your target area',
+      detail: `${targetArea} watch: SF metro active listings are ${formatSignedPercent(market.inventory.percent)} month over month.`,
+    })
+  }
+
+  return alerts
+}
+
+function ClientAlerts({ alerts }: { alerts: ClientAlert[] }) {
+  if (!alerts.length) return null
+
+  return (
+    <section className="client-alerts" aria-label="Personalized alerts">
+      {alerts.map((alert) => (
+        <article className="client-alert" key={alert.id}>
+          <BellRing size={16} />
+          <span>
+            <strong>{alert.title}</strong>
+            <small>{alert.detail}</small>
+          </span>
+        </article>
+      ))}
+    </section>
+  )
 }
 
 function StatCard({
@@ -607,13 +727,15 @@ export function OverviewTab({
   onOpenCalculators,
   onOpenCostWatch,
 }: OverviewTabProps) {
+  const clientActivity = useClientActivity()
   const market = buildMarketSnapshot()
   const profile = currentOverviewProfile(user)
   const recents = readRecentCalculatorIds(profile)
   const hero = heroCopy(profile, market)
+  const alerts = buildClientAlerts(user, profile, market)
 
   function openCalculator(calculatorId: string) {
-    rememberRecentCalculator(profile.id, calculatorId)
+    void clientActivity?.rememberCalculator(calculatorId)
     onOpenCalculator(calculatorId)
   }
 
@@ -640,6 +762,7 @@ export function OverviewTab({
         </div>
       </section>
 
+      <ClientAlerts alerts={alerts} />
       <PersonalStatCards profile={profile} market={market} onOpenCalculator={openCalculator} />
       <MarketDigest market={market} onOpenCostWatch={onOpenCostWatch} />
       <RecentCalculatorPills

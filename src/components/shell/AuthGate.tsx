@@ -5,11 +5,12 @@ import {
   getAccountProfile,
   type AccountProfile,
   type AccountRole,
+  type ClientState,
+  type SavedScenario,
 } from '../../lib/accounts'
 import {
   defaultOverviewDemoAccount,
   findOverviewDemoAccount,
-  type ClientState,
 } from '../../data/overviewPersonalization'
 import {
   isSupabaseConfigured,
@@ -18,10 +19,20 @@ import {
 } from '../../lib/supabase'
 
 export interface HubUser {
+  id: string
   email: string
   name: string
   role: AccountRole
-  clientState?: ClientState
+  isDemo?: boolean
+  clientState: ClientState
+  advisorNote: string | null
+  targetBudget: number | null
+  neighborhoods: string[]
+  closingDate: string | null
+  lockedRate: number | null
+  refiThreshold: number | null
+  recentCalculatorIds: string[]
+  savedScenarios: SavedScenario[]
   overviewProfileId?: string
 }
 
@@ -34,6 +45,7 @@ function toHubUser(user: User, profile: AccountProfile): HubUser {
   const metadataName = user.user_metadata?.full_name
 
   return {
+    id: profile.id,
     email,
     name:
       profile.full_name?.trim() ||
@@ -41,6 +53,15 @@ function toHubUser(user: User, profile: AccountProfile): HubUser {
         ? metadataName.trim()
         : email.split('@')[0].replace(/[._-]/g, ' ')),
     role: profile.account_role,
+    clientState: profile.client_state,
+    advisorNote: profile.advisor_note,
+    targetBudget: profile.target_budget,
+    neighborhoods: profile.neighborhoods,
+    closingDate: profile.closing_date,
+    lockedRate: profile.locked_rate,
+    refiThreshold: profile.refi_threshold,
+    recentCalculatorIds: profile.recent_calculator_ids,
+    savedScenarios: profile.saved_scenarios,
   }
 }
 
@@ -67,6 +88,25 @@ function readDemoAccount() {
   const requested = params.get('demo') ?? params.get('account')
 
   return findOverviewDemoAccount(requested) ?? defaultOverviewDemoAccount
+}
+
+function readDemoRole(): AccountRole {
+  const params = new URLSearchParams(window.location.search)
+  const requested = params.get('role')
+
+  return requested === 'advisor' || requested === 'admin' ? requested : 'client'
+}
+
+function readStoredArray<T>(key: string, fallback: T[]) {
+  try {
+    const stored = window.localStorage.getItem(key)
+    if (!stored) return fallback
+
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? (parsed as T[]) : fallback
+  } catch {
+    return fallback
+  }
 }
 
 function friendlyAuthError(message: string) {
@@ -206,13 +246,31 @@ export function AuthGate({ children }: AuthGateProps) {
 
   if (allowDevBypass) {
     const demoAccount = readDemoAccount()
+    const demoRecentCalculatorIds = readStoredArray<string>(
+      `mwm.recentCalculators.${demoAccount.id}`,
+      demoAccount.recentCalculatorIds,
+    )
+    const demoSavedScenarios = readStoredArray<SavedScenario>(
+      `mwm.savedScenarios.${demoAccount.id}`,
+      [],
+    )
 
     return children(
       {
+        id: demoAccount.id,
         name: demoAccount.name,
         email: demoAccount.email,
-        role: 'client',
+        role: readDemoRole(),
+        isDemo: true,
         clientState: demoAccount.clientState,
+        advisorNote: demoAccount.advisorNote,
+        targetBudget: demoAccount.search?.targetBudget ?? demoAccount.escrow?.budget ?? null,
+        neighborhoods: demoAccount.preferences.neighborhoods,
+        closingDate: demoAccount.escrow?.closingDate ?? null,
+        lockedRate: demoAccount.escrow?.lockedRate ?? null,
+        refiThreshold: demoAccount.homeowner?.refiAlertRate ?? null,
+        recentCalculatorIds: demoRecentCalculatorIds,
+        savedScenarios: demoSavedScenarios,
         overviewProfileId: demoAccount.id,
       },
       async () => undefined,

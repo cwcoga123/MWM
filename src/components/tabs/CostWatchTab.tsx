@@ -5,7 +5,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { ArrowRight, ArrowUpRight, ChevronDown, Search, Star, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, ChevronDown, MapPin, Search, Star, X } from 'lucide-react'
 import {
   DEFAULT_HOME_COST_PINS,
   HOME_COST_RANGE_OPTIONS,
@@ -29,6 +29,7 @@ import {
   type HomeCostRecord,
 } from '../../lib/homeCostWatch'
 import { formatFredDate, formatSnapshotTimestamp } from '../../lib/formatFredValue'
+import type { HubUser } from '../shell/AuthGate'
 
 const PIN_STORAGE_KEY = 'mwm.costwatch.pins'
 const SUMMARY_INDICATOR_IDS = [
@@ -44,6 +45,42 @@ const GEO_OPTIONS: { id: HomeCostGeoFilter; label: string }[] = [
   { id: 'california', label: 'California' },
   { id: 'national', label: 'National' },
 ]
+
+const SF_AREA_INDICATORS = [
+  'sf-case-shiller',
+  'sf-median-listing-price',
+  'sf-listings',
+  'sf-days-on-market',
+  'sf-unemployment',
+  'sf-permits',
+]
+const SAN_JOSE_AREA_INDICATORS = [
+  'san-jose-median-listing-price',
+  'san-jose-listings',
+  'san-jose-unemployment',
+  'san-jose-permits',
+]
+const RATE_INTEREST_INDICATORS = ['mortgage-30', 'mortgage-15', 'treasury-10y']
+
+function savedAreaIndicatorIds(user?: HubUser) {
+  if (!user) return []
+
+  const savedNeighborhoods = user.neighborhoods.map((area) => area.toLowerCase())
+  const hasSanJoseInterest = savedNeighborhoods.some((area) =>
+    ['san jose', 'cupertino', 'sunnyvale', 'santa clara', 'los gatos', 'campbell'].some((match) =>
+      area.includes(match),
+    ),
+  )
+  const hasSavedAreas = savedNeighborhoods.length > 0
+  const ids = [
+    ...(hasSavedAreas ? SF_AREA_INDICATORS : []),
+    ...(hasSanJoseInterest ? SAN_JOSE_AREA_INDICATORS : []),
+    ...(user.targetBudget ? ['sf-median-listing-price'] : []),
+    ...(user.lockedRate || user.refiThreshold ? RATE_INTEREST_INDICATORS : []),
+  ]
+
+  return Array.from(new Set(ids)).filter((id) => Boolean(getHomeCostRecord(id)))
+}
 
 function generatedDateLabel(isoTimestamp: string | null) {
   if (!isoTimestamp) return 'Refresh pending'
@@ -596,15 +633,21 @@ export function CostWatchOverviewStrip({ onOpenCostWatch }: { onOpenCostWatch: (
   )
 }
 
-export function CostWatchTab() {
+export function CostWatchTab({ user }: { user?: HubUser }) {
+  const initialSavedIndicatorIds = savedAreaIndicatorIds(user)
   const [range, setRange] = useState<HomeCostRange>('20Y')
   const [geo, setGeo] = useState<HomeCostGeoFilter>('all')
   const [selectedGroup, setSelectedGroup] = useState('all')
   const [query, setQuery] = useState('')
+  const [savedOnly, setSavedOnly] = useState(initialSavedIndicatorIds.length > 0)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [detailId, setDetailId] = useState<string | null>(readInitialDetailId)
   const [pins, setPins] = useState<string[]>(readPins)
   const normalizedQuery = query.trim().toLowerCase()
+  const savedIndicatorIds = useMemo(() => savedAreaIndicatorIds(user), [user])
+  const savedIndicatorIdSet = useMemo(() => new Set(savedIndicatorIds), [savedIndicatorIds])
+  const savedOnlyActive = savedOnly && savedIndicatorIds.length > 0
+  const savedAreasLabel = user?.neighborhoods.slice(0, 3).join(', ') || 'Rate watch'
 
   useEffect(() => {
     window.localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pins))
@@ -647,6 +690,7 @@ export function CostWatchTab() {
               .map((indicator) => getHomeCostRecord(indicator.id))
               .filter((record): record is HomeCostRecord => {
                 if (!record) return false
+                if (savedOnlyActive && !savedIndicatorIdSet.has(record.indicator.id)) return false
                 if (!normalizedQuery) return true
                 return (
                   record.indicator.label.toLowerCase().includes(normalizedQuery) ||
@@ -665,9 +709,14 @@ export function CostWatchTab() {
         }
       })
       .filter((layer) => layer.count > 0)
-  }, [geo, normalizedQuery, selectedGroup])
+  }, [geo, normalizedQuery, savedIndicatorIdSet, savedOnlyActive, selectedGroup])
 
-  const pinnedRecords = pins.map((id) => getHomeCostRecord(id)).filter((record): record is HomeCostRecord => Boolean(record))
+  const pinnedRecords = pins
+    .map((id) => getHomeCostRecord(id))
+    .filter((record): record is HomeCostRecord => {
+      if (!record) return false
+      return !savedOnlyActive || savedIndicatorIdSet.has(record.indicator.id)
+    })
   const showPinned = !normalizedQuery && selectedGroup === 'all' && pinnedRecords.length > 0
   const visibleCount = visibleLayers.reduce((total, layer) => total + layer.count, 0)
   const detailRecord = detailId ? getHomeCostRecord(detailId) : undefined
@@ -687,6 +736,7 @@ export function CostWatchTab() {
     setQuery('')
     setGeo('all')
     setSelectedGroup('all')
+    setSavedOnly(false)
   }
 
   return (
@@ -712,6 +762,17 @@ export function CostWatchTab() {
             placeholder='Search indicators - try "lumber" or "mortgage"'
           />
         </label>
+        {savedIndicatorIds.length > 0 && (
+          <button
+            type="button"
+            className={`cost-watch-saved-filter ${savedOnlyActive ? 'is-active' : ''}`}
+            aria-pressed={savedOnlyActive}
+            onClick={() => setSavedOnly((current) => !current)}
+          >
+            <MapPin size={15} />
+            Saved
+          </button>
+        )}
         <GeoSegmentedControl value={geo} onChange={setGeo} />
         <select
           className="cost-watch-select"
@@ -728,6 +789,14 @@ export function CostWatchTab() {
         </select>
         <RangeSegmentedControl value={range} onChange={setRange} />
       </div>
+
+      {savedOnlyActive && (
+        <div className="cost-watch-client-filter">
+          <MapPin size={15} />
+          <strong>{savedAreasLabel}</strong>
+          <span>{savedIndicatorIds.length} matched indicators</span>
+        </div>
+      )}
 
       {showPinned && (
         <section className="cost-watch-pinned" aria-labelledby="cost-watch-pinned-title">

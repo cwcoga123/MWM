@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, Mail, Send, Share2 } from 'lucide-react'
+import { BookmarkPlus, Check, Copy, Mail, Send, Share2 } from 'lucide-react'
 import { advisorContact } from '../../data/advisor'
 import { sendAdvisorEmail } from '../../lib/advisorEmail'
 import {
@@ -8,6 +8,7 @@ import {
   buildShareSummary,
   type ShareSection,
 } from '../../lib/share'
+import { useClientActivity } from './clientActivityContext'
 
 interface ShareWithAdvisorProps {
   /** Tool name shown in the email subject and intro, e.g. "Mortgage calculator". */
@@ -17,6 +18,7 @@ interface ShareWithAdvisorProps {
 }
 
 type SendStatus = 'idle' | 'sending' | 'sent' | 'fallback'
+type SaveStatus = 'idle' | 'saving' | 'saved'
 
 /**
  * Reusable "Share with your advisor" action. Drop it in any tool's action bar
@@ -29,6 +31,8 @@ export function ShareWithAdvisor({ tool, getSections }: ShareWithAdvisorProps) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [status, setStatus] = useState<SendStatus>('idle')
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+  const clientActivity = useClientActivity()
   const containerRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -37,6 +41,7 @@ export function ShareWithAdvisor({ tool, getSections }: ShareWithAdvisorProps) {
     function close() {
       setOpen(false)
       setStatus('idle')
+      setSaveStatus('idle')
       setCopied(false)
     }
 
@@ -88,6 +93,7 @@ export function ShareWithAdvisor({ tool, getSections }: ShareWithAdvisorProps) {
   function closePopover() {
     setOpen(false)
     setStatus('idle')
+    setSaveStatus('idle')
     setCopied(false)
   }
 
@@ -104,6 +110,14 @@ export function ShareWithAdvisor({ tool, getSections }: ShareWithAdvisorProps) {
       // Clipboard unavailable (e.g. insecure context) — leave the popover open
       // so the email options remain available.
     }
+  }
+
+  async function saveScenario() {
+    if (!clientActivity || saveStatus === 'saving') return
+
+    setSaveStatus('saving')
+    await clientActivity.saveScenario(tool, getSections())
+    setSaveStatus('saved')
   }
 
   return (
@@ -141,6 +155,17 @@ export function ShareWithAdvisor({ tool, getSections }: ShareWithAdvisorProps) {
             {copied ? <Check size={15} /> : <Copy size={15} />}
             {copied ? 'Copied' : 'Copy summary'}
           </button>
+          {clientActivity && (
+            <button
+              type="button"
+              className="share-advisor__action"
+              onClick={saveScenario}
+              disabled={saveStatus === 'saving'}
+            >
+              {saveStatus === 'saved' ? <Check size={15} /> : <BookmarkPlus size={15} />}
+              {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save scenario'}
+            </button>
+          )}
           {status === 'sent' && (
             <p className="share-advisor__status" role="status">
               Sent to {advisorContact.name}.

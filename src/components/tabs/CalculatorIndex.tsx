@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   BellRing,
+  Bookmark,
   ChevronDown,
   ClipboardCheck,
   Clock3,
   Search,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 import { calculators, categories, type CalculatorItem } from '../../data/calculators'
 import { AffordabilityCalculator } from '../calculators/AffordabilityCalculator'
@@ -25,6 +27,7 @@ import { RefinanceBreakEvenCalculator } from '../calculators/RefinanceBreakEvenC
 import { PreapprovalChecklistTool } from '../calculators/PreapprovalChecklistTool'
 import { RefiWatchTool } from '../calculators/RefiWatchTool'
 import type { HubUser } from '../shell/AuthGate'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface CalculatorIndexProps {
   user: HubUser
@@ -101,6 +104,8 @@ function CalculatorRow({
 
 export function CalculatorIndex({ user }: CalculatorIndexProps) {
   const FeaturedIcon = calculators[0].icon
+  const clientActivity = useClientActivity()
+  const lastRememberedCalculatorRef = useRef<ActiveCalculator>(null)
   const [query, setQuery] = useState('')
   const [activeCalculator, setActiveCalculator] =
     useState<ActiveCalculator>(calculatorFromHash)
@@ -129,6 +134,13 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
     window.addEventListener('hashchange', syncCalculatorFromHash)
     return () => window.removeEventListener('hashchange', syncCalculatorFromHash)
   }, [])
+
+  useEffect(() => {
+    if (activeCalculator && activeCalculator !== lastRememberedCalculatorRef.current) {
+      lastRememberedCalculatorRef.current = activeCalculator
+      void clientActivity?.rememberCalculator(activeCalculator)
+    }
+  }, [activeCalculator, clientActivity])
 
   function openCalculator(calculatorId: string) {
     if ((OPENABLE_CALCULATORS as string[]).includes(calculatorId)) {
@@ -207,6 +219,11 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
   if (activeCalculator === 'refi-watch') {
     return <RefiWatchTool onBack={closeCalculator} />
   }
+
+  const recentCalculators = user.recentCalculatorIds
+    .map((id) => calculators.find((calculator) => calculator.id === id))
+    .filter((calculator): calculator is CalculatorItem => Boolean(calculator))
+  const savedScenarios = user.savedScenarios.slice(0, 5)
 
   return (
     <main className="calculator-page" id="calculators">
@@ -329,7 +346,52 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
           </div>
           <div className="recent-card">
             <div className="recent-card__heading"><Clock3 size={18} /><strong>Recently viewed</strong></div>
-            <p>Your recently used calculators will appear here.</p>
+            {recentCalculators.length ? (
+              <div className="recent-card__list">
+                {recentCalculators.map((calculator) => (
+                  <button
+                    type="button"
+                    key={calculator.id}
+                    onClick={() => openCalculator(calculator.id)}
+                  >
+                    <span>{calculator.title}</span>
+                    <ArrowRight size={13} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p>Your recently used calculators will appear here.</p>
+            )}
+          </div>
+          <div className="recent-card saved-scenarios-card">
+            <div className="recent-card__heading"><Bookmark size={18} /><strong>Saved scenarios</strong></div>
+            {savedScenarios.length ? (
+              <div className="saved-scenarios-list">
+                {savedScenarios.map((scenario) => (
+                  <article key={scenario.id}>
+                    <button
+                      type="button"
+                      className="saved-scenarios-list__open"
+                      onClick={() => openCalculator(scenario.calculatorId)}
+                    >
+                      <strong>{scenario.tool}</strong>
+                      <span>{scenario.label}</span>
+                      {scenario.summary && <small>{scenario.summary}</small>}
+                    </button>
+                    <button
+                      type="button"
+                      className="saved-scenarios-list__remove"
+                      aria-label={`Remove ${scenario.tool} scenario`}
+                      onClick={() => void clientActivity?.removeScenario(scenario.id)}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p>Saved calculator snapshots will appear here.</p>
+            )}
           </div>
           <p className="disclaimer">
             Results are estimates for educational purposes and are not a loan offer or

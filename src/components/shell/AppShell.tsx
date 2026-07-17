@@ -17,6 +17,8 @@ import { AboutTab } from '../tabs/AboutTab'
 import { MarketScannerTab } from '../tabs/MarketScannerTab'
 import { CostWatchTab } from '../tabs/CostWatchTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
+import { ClientActivityProvider } from '../shared/ClientActivityProvider'
+import { AdvisorConsoleTab } from '../tabs/AdvisorConsoleTab'
 
 interface AppShellProps {
   user: HubUser
@@ -31,6 +33,7 @@ type ActiveView =
   | 'about'
   | 'market-scanner'
   | 'cost-watch'
+  | 'advisor-console'
 
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
@@ -49,6 +52,7 @@ function viewFromHash(): ActiveView {
   if (hash === 'resources') return 'resources'
   if (hash === 'about') return 'about'
   if (hash === 'market-scanner') return 'market-scanner'
+  if (hash === 'advisor-console') return 'advisor-console'
   return 'calculators'
 }
 
@@ -57,17 +61,29 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
   const [profileOpen, setProfileOpen] = useState(false)
   const [activeView, setActiveView] = useState<ActiveView>(viewFromHash)
   const [advisorCardOpen, setAdvisorCardOpen] = useState(false)
+  const [hubUserEdits, setHubUserEdits] = useState<{
+    userId: string
+    patch: Partial<HubUser>
+  }>({ userId: user.id, patch: {} })
+  const hubUser = useMemo(
+    () => ({
+      ...user,
+      ...(hubUserEdits.userId === user.id ? hubUserEdits.patch : {}),
+    }),
+    [hubUserEdits, user],
+  )
   const initials = useMemo(
     () =>
-      user.name
+      hubUser.name
         .split(' ')
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join(''),
-    [user.name],
+    [hubUser.name],
   )
-  const roleLabel = user.role[0].toUpperCase() + user.role.slice(1)
+  const roleLabel = hubUser.role[0].toUpperCase() + hubUser.role.slice(1)
+  const canUseAdvisorConsole = hubUser.role === 'advisor' || hubUser.role === 'admin'
 
   useEffect(() => {
     function syncViewFromHash() {
@@ -120,13 +136,31 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
     setMobileNavOpen(false)
   }
 
+  function openAdvisorConsole() {
+    window.location.hash = 'advisor-console'
+    setActiveView('advisor-console')
+    setMobileNavOpen(false)
+  }
+
   function openCalculatorFromOverview(calculatorId: string) {
     window.location.hash = calculatorId
     setActiveView('calculators')
   }
 
   return (
-    <div className="app-shell">
+    <ClientActivityProvider
+      user={hubUser}
+      onUserUpdate={(patch) =>
+        setHubUserEdits((current) => ({
+          userId: user.id,
+          patch: {
+            ...(current.userId === user.id ? current.patch : {}),
+            ...patch,
+          },
+        }))
+      }
+    >
+      <div className="app-shell">
       <aside className={`sidebar ${mobileNavOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar__top">
           <a className="brand-lockup" href="/" aria-label="MWM home">
@@ -212,6 +246,19 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           >
             Cost Watch
           </a>
+          {canUseAdvisorConsole && (
+            <a
+              href="#advisor-console"
+              className={activeView === 'advisor-console' ? 'is-active' : ''}
+              aria-current={activeView === 'advisor-console' ? 'page' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                openAdvisorConsole()
+              }}
+            >
+              Advisor
+            </a>
+          )}
           <a
             href="#about"
             className={activeView === 'about' ? 'is-active' : ''}
@@ -242,14 +289,19 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             >
               <span className="avatar">{initials || 'M'}</span>
               <span className="profile-button__copy">
-                <strong>{user.name}</strong>
+                <strong>{hubUser.name}</strong>
                 <small>{roleLabel}</small>
               </span>
               <ChevronDown size={16} />
             </button>
             {profileOpen && (
               <div className="profile-popover" role="menu">
-                <p>{user.email}</p>
+                <p>{hubUser.email}</p>
+                {canUseAdvisorConsole && (
+                  <a role="menuitem" href="#advisor-console" onClick={() => setProfileOpen(false)}>
+                    <Settings size={16} /> Advisor Console
+                  </a>
+                )}
                 <a role="menuitem" href="#help" onClick={() => setProfileOpen(false)}>
                   <CircleHelp size={16} /> Help & support
                 </a>
@@ -284,7 +336,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
 
         {activeView === 'overview' && (
           <OverviewTab
-            user={user}
+            user={hubUser}
             onOpenCalculator={openCalculatorFromOverview}
             onOpenCalculators={openCalculators}
             onOpenCostWatch={openCostWatch}
@@ -292,14 +344,16 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           />
         )}
         {activeView === 'calendar' && <CalendarTab />}
-        {activeView === 'calculators' && <CalculatorIndex user={user} />}
-        {activeView === 'resources' && <ResourcesTab user={user} />}
+        {activeView === 'calculators' && <CalculatorIndex user={hubUser} />}
+        {activeView === 'resources' && <ResourcesTab user={hubUser} />}
         {activeView === 'about' && <AboutTab />}
         {activeView === 'market-scanner' && <MarketScannerTab />}
-        {activeView === 'cost-watch' && <CostWatchTab />}
+        {activeView === 'cost-watch' && <CostWatchTab user={hubUser} />}
+        {activeView === 'advisor-console' && <AdvisorConsoleTab user={hubUser} />}
       </div>
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />
-    </div>
+      </div>
+    </ClientActivityProvider>
   )
 }

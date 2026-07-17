@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import { calculateProductRate, formatRate, rateProducts } from '../../lib/mortgageRates'
 import { calculateRefinanceBreakEven } from '../../lib/refinanceBreakEven'
+import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
+import type { ShareSection } from '../../lib/share'
 
 type RefiWatchProfile = {
   currentLoanBalance: number
@@ -180,12 +182,41 @@ export function RefiWatchTool({ onBack }: RefiWatchToolProps) {
     }))
   }
 
+  function getShareSections(): ShareSection[] {
+    return [
+      {
+        title: 'Saved loan profile',
+        entries: [
+          { label: 'Current loan balance', value: preciseCurrency.format(refiWatchProfile.currentLoanBalance) },
+          { label: 'Current interest rate', value: formatRate(refiWatchProfile.currentInterestRate) },
+          { label: 'Remaining term', value: `${refiWatchProfile.currentRemainingTermYears} years` },
+          { label: 'Estimated closing costs', value: preciseCurrency.format(refiWatchProfile.refinanceClosingCosts) },
+          { label: 'Break-even target', value: `${refiWatchProfile.targetBreakEvenMonths} months` },
+          { label: 'Credit score', value: String(refiWatchProfile.creditScore) },
+          { label: 'Target loan term', value: `${refiWatchProfile.targetLoanTermYears} years` },
+        ],
+      },
+      {
+        title: 'Watch status',
+        entries: [
+          { label: 'Best posted rate', value: bestRefiWatchProduct ? formatRate(bestRefiWatchProduct.rate) : '-' },
+          { label: 'Best break-even', value: bestRefiWatchProduct ? formatBreakEven(bestRefiWatchProduct.result.breakEvenMonths) : '-' },
+          { label: 'Target watch rate', value: refiWatchTargetRate === null ? '-' : formatRate(refiWatchTargetRate) },
+          { label: 'Status', value: refiWatchTriggered ? 'Refi review triggered' : 'Keep watching' },
+        ],
+      },
+    ]
+  }
+
   return (
     <main className="mortgage-page resources-page" id="refi-watch">
       <div className="resource-breadcrumb">
         <button type="button" onClick={onBack}>
           <ArrowLeft size={16} /> Calculators
         </button>
+        <div className="mortgage-actions">
+          <ShareWithAdvisor tool="Refi Watch" getSections={getShareSections} />
+        </div>
       </div>
 
       <header className="mortgage-heading">
