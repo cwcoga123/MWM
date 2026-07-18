@@ -23,7 +23,7 @@ import {
   overviewDemoAccounts,
   type OverviewClientProfile,
 } from '../../data/overviewPersonalization'
-import type { HubUser } from '../shell/AuthGate'
+import type { HubUser } from '../shell/AdminAuthGate'
 
 interface AdvisorConsoleTabProps {
   user: HubUser

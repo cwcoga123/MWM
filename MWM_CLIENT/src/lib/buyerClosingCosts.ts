@@ -64,16 +64,6 @@ function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
-function paymentFactor(annualInterestRate: number, termYears: number) {
-  const monthlyRate = safeNumber(annualInterestRate) / 1200
-  const numberOfPayments = Math.max(1, Math.round(safeNumber(termYears) * 12))
-
-  return monthlyRate === 0
-    ? 1 / numberOfPayments
-    : (monthlyRate * (1 + monthlyRate) ** numberOfPayments) /
-        ((1 + monthlyRate) ** numberOfPayments - 1)
-}
-
 /** Days of per-diem interest a buyer prepays: closing day through the end of that month. */
 export function daysOfPrepaidInterest(estimatedClosingDate: string): number {
   const closing = new Date(`${estimatedClosingDate}T00:00:00`)

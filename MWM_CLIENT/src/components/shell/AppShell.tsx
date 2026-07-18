@@ -18,7 +18,6 @@ import { MarketScannerTab } from '../tabs/MarketScannerTab'
 import { CostWatchTab } from '../tabs/CostWatchTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 import { ClientActivityProvider } from '../shared/ClientActivityProvider'
-import { AdvisorConsoleTab } from '../tabs/AdvisorConsoleTab'
 
 interface AppShellProps {
   user: HubUser
@@ -33,7 +32,6 @@ type ActiveView =
   | 'about'
   | 'market-scanner'
   | 'cost-watch'
-  | 'advisor-console'
 
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
@@ -52,7 +50,6 @@ function viewFromHash(): ActiveView {
   if (hash === 'resources') return 'resources'
   if (hash === 'about') return 'about'
   if (hash === 'market-scanner') return 'market-scanner'
-  if (hash === 'advisor-console') return 'advisor-console'
   return 'calculators'
 }
 
@@ -83,7 +80,6 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
     [hubUser.name],
   )
   const roleLabel = hubUser.role[0].toUpperCase() + hubUser.role.slice(1)
-  const canUseAdvisorConsole = hubUser.role === 'advisor' || hubUser.role === 'admin'
 
   useEffect(() => {
     function syncViewFromHash() {
@@ -133,12 +129,6 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
   function openCostWatch(indicatorId?: string) {
     window.location.hash = indicatorId ? `cost-watch/${indicatorId}` : 'cost-watch'
     setActiveView('cost-watch')
-    setMobileNavOpen(false)
-  }
-
-  function openAdvisorConsole() {
-    window.location.hash = 'advisor-console'
-    setActiveView('advisor-console')
     setMobileNavOpen(false)
   }
 
@@ -246,19 +236,6 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
           >
             Cost Watch
           </a>
-          {canUseAdvisorConsole && (
-            <a
-              href="#advisor-console"
-              className={activeView === 'advisor-console' ? 'is-active' : ''}
-              aria-current={activeView === 'advisor-console' ? 'page' : undefined}
-              onClick={(event) => {
-                event.preventDefault()
-                openAdvisorConsole()
-              }}
-            >
-              Advisor
-            </a>
-          )}
           <a
             href="#about"
             className={activeView === 'about' ? 'is-active' : ''}
@@ -297,11 +274,6 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             {profileOpen && (
               <div className="profile-popover" role="menu">
                 <p>{hubUser.email}</p>
-                {canUseAdvisorConsole && (
-                  <a role="menuitem" href="#advisor-console" onClick={() => setProfileOpen(false)}>
-                    <Settings size={16} /> Advisor Console
-                  </a>
-                )}
                 <a role="menuitem" href="#help" onClick={() => setProfileOpen(false)}>
                   <CircleHelp size={16} /> Help & support
                 </a>
@@ -349,7 +321,6 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
         {activeView === 'about' && <AboutTab />}
         {activeView === 'market-scanner' && <MarketScannerTab />}
         {activeView === 'cost-watch' && <CostWatchTab user={hubUser} />}
-        {activeView === 'advisor-console' && <AdvisorConsoleTab user={hubUser} />}
       </div>
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />

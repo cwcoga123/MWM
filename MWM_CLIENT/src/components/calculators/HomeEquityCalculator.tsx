@@ -95,6 +95,7 @@ function PercentField({
           id={id}
           type="text"
           inputMode="decimal"
+          step={step}
           value={displayValue}
           onFocus={() => setRawInput(value === 0 ? '' : String(value))}
           onBlur={() => setRawInput(null)}

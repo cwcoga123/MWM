@@ -9,7 +9,9 @@ interface ResourcesTabProps {
   user: HubUser
 }
 
-export function ResourcesTab({ user: _user }: ResourcesTabProps) {
+export function ResourcesTab({ user }: ResourcesTabProps) {
+  void user
+
   const [activeResource, setActiveResource] = useState<ActiveResource>(null)
 
   if (activeResource === 'education-center') {

@@ -895,6 +895,30 @@ a {
   padding: 0 7px;
 }
 
+.admin-app-shell .primary-nav a {
+  gap: 9px;
+}
+
+.admin-main {
+  padding-top: 1px;
+}
+
+.admin-page-kicker {
+  width: min(1180px, calc(100% - 96px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 28px auto -30px;
+  color: #70817e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.admin-page-kicker svg {
+  color: var(--forest-soft);
+}
+
 .recent-card__list,
 .saved-scenarios-list {
   display: grid;

@@ -118,8 +118,6 @@ export function calculateRentVsBuy(inputs: RentVsBuyInputs): RentVsBuyResult {
       if (month < scheduledMonths) {
         if (principalPortion > loanBalance) principalPortion = loanBalance
         loanBalance = Math.max(0, loanBalance - principalPortion)
-      } else {
-        principalPortion = 0
       }
 
       const totalOwnershipCash =
