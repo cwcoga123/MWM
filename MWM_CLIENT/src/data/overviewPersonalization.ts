@@ -50,6 +50,15 @@ export interface OverviewClientProfile {
     remainingBalance: number
     equityGainThisYear: number
   }
+  seller?: {
+    address: string
+    estimatedValue: number
+    mortgageBalance: number
+    targetSalePrice: number
+    sellingCostPercent: number
+    repairsBudget: number
+    estimatedNetProceeds: number
+  }
 }
 
 export const overviewDemoAccounts: OverviewClientProfile[] = [

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mwm-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "MWM_ADMIN", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

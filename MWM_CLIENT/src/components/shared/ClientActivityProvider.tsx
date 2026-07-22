@@ -5,14 +5,20 @@ import { calculators } from '../../data/calculators'
 import {
   updateRecentCalculatorIds,
   updateSavedScenarios,
+  updateUserPreferences,
   type SavedScenario,
 } from '../../lib/accounts'
+import {
+  mergeMyPlanPreferences,
+  type MyPlanPreferences,
+} from '../../data/preferences'
 import { type ShareSection } from '../../lib/share'
 import type { HubUser } from '../shell/AuthGate'
 import { ClientActivityContext } from './clientActivityContext'
+import { readCalculatorDraft } from '../../lib/calculatorDrafts'
 
 type UserPatch = Partial<
-  Pick<HubUser, 'recentCalculatorIds' | 'savedScenarios'>
+  Pick<HubUser, 'recentCalculatorIds' | 'savedScenarios' | 'preferences'>
 >
 
 interface ClientActivityProviderProps {
@@ -103,13 +109,15 @@ export function ClientActivityProvider({
   }
 
   async function saveScenario(tool: string, sections: ShareSection[]) {
+    const calculatorId = calculatorIdFromLocation(tool)
     const scenario: SavedScenario = {
       id: createId(),
-      calculatorId: calculatorIdFromLocation(tool),
+      calculatorId,
       tool,
       label: scenarioLabel(sections),
       summary: scenarioSummary(sections),
       sections,
+      inputDraft: readCalculatorDraft(user.id, calculatorId) ?? undefined,
       savedAt: new Date().toISOString(),
     }
     const nextSavedScenarios = [scenario, ...user.savedScenarios].slice(0, MAX_SAVED_SCENARIOS)
@@ -137,9 +145,21 @@ export function ClientActivityProvider({
     }
   }
 
+  async function updatePreferences(patch: Partial<MyPlanPreferences>) {
+    const nextPreferences = mergeMyPlanPreferences(user.preferences, patch)
+    onUserUpdate({ preferences: nextPreferences })
+
+    try {
+      if (user.isDemo) throw new Error('Demo profile')
+      await updateUserPreferences(user.id, nextPreferences)
+    } catch {
+      persistLocal(user.id, 'preferences', nextPreferences)
+    }
+  }
+
   return (
     <ClientActivityContext.Provider
-      value={{ rememberCalculator, saveScenario, removeScenario }}
+      value={{ user, rememberCalculator, saveScenario, removeScenario, updatePreferences }}
     >
       {children}
     </ClientActivityContext.Provider>

@@ -21,6 +21,7 @@ import {
 } from '../../data/realEstateCalendar'
 import { localEvents, type LocalEvent } from '../../data/localEvents'
 import { defaultMyDates, type MyDate, type MyDateKind } from '../../data/myDates'
+import type { HubUser } from '../shell/AuthGate'
 
 type CalendarFilter = 'all' | CalendarCategory
 type FeedRow =
@@ -36,6 +37,7 @@ interface DisplayMarketEvent {
 }
 
 interface CalendarTabProps {
+  user?: HubUser
   hiImpactOnly?: boolean
   listMaxHeight?: number
   showLocalEvents?: boolean
@@ -45,6 +47,10 @@ const STORAGE_KEYS = {
   myDates: 'mwm-cal-mydates',
   reminders: 'mwm-cal-reminders',
   rsvp: 'mwm-cal-rsvp',
+}
+
+function storageKey(userId: string | undefined, key: string) {
+  return userId ? `${key}.${userId}` : key
 }
 
 const categoryFilterLabels: Record<CalendarCategory, string> = {
@@ -205,11 +211,11 @@ function googleCalendarUrl(title: string, date: string, endDate?: string, detail
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-function readStoredStringArray(key: string) {
+function readStoredStringArray(key: string, userId?: string) {
   if (typeof window === 'undefined') return []
 
   try {
-    const raw = window.localStorage.getItem(key)
+    const raw = window.localStorage.getItem(storageKey(userId, key))
     if (!raw) return []
 
     const parsed: unknown = JSON.parse(raw)
@@ -226,9 +232,9 @@ function readStoredStringArray(key: string) {
   return []
 }
 
-function writeStoredJson(key: string, value: unknown) {
+function writeStoredJson(key: string, value: unknown, userId?: string) {
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(key, JSON.stringify(value))
+  window.localStorage.setItem(storageKey(userId, key), JSON.stringify(value))
 }
 
 function isMyDateKind(value: unknown): value is MyDateKind {
@@ -249,11 +255,11 @@ function isStoredMyDate(value: unknown): value is MyDate {
   )
 }
 
-function readStoredMyDates() {
+function readStoredMyDates(userId?: string) {
   if (typeof window === 'undefined') return []
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEYS.myDates)
+    const raw = window.localStorage.getItem(storageKey(userId, STORAGE_KEYS.myDates))
     if (!raw) return []
 
     const parsed: unknown = JSON.parse(raw)
@@ -308,9 +314,9 @@ function MilestoneIcon({ kind }: { kind: MyDateKind }) {
   return <CalendarDays size={17} aria-hidden="true" />
 }
 
-function MyDatesSection() {
+function MyDatesSection({ userId }: { userId?: string }) {
   const today = useMemo(() => getToday(), [])
-  const [myDates, setMyDates] = useState<MyDate[]>(() => [...defaultMyDates, ...readStoredMyDates()])
+  const [myDates, setMyDates] = useState<MyDate[]>(() => [...defaultMyDates, ...readStoredMyDates(userId)])
   const [addOpen, setAddOpen] = useState(false)
   const [addLabel, setAddLabel] = useState('')
   const [addDate, setAddDate] = useState('')
@@ -319,8 +325,9 @@ function MyDatesSection() {
     writeStoredJson(
       STORAGE_KEYS.myDates,
       myDates.filter((date) => date.byUser),
+      userId,
     )
-  }, [myDates])
+  }, [myDates, userId])
 
   const upcomingDates = useMemo(
     () =>
@@ -446,14 +453,14 @@ function MyDatesSection() {
   )
 }
 
-function LocalEventsSection() {
+function LocalEventsSection({ userId }: { userId?: string }) {
   const [seeAll, setSeeAll] = useState(false)
-  const [rsvpEventIds, setRsvpEventIds] = useState<string[]>(() => readStoredStringArray(STORAGE_KEYS.rsvp))
+  const [rsvpEventIds, setRsvpEventIds] = useState<string[]>(() => readStoredStringArray(STORAGE_KEYS.rsvp, userId))
   const visibleEvents = seeAll ? localEvents : localEvents.slice(0, 3)
 
   useEffect(() => {
-    writeStoredJson(STORAGE_KEYS.rsvp, rsvpEventIds)
-  }, [rsvpEventIds])
+    writeStoredJson(STORAGE_KEYS.rsvp, rsvpEventIds, userId)
+  }, [rsvpEventIds, userId])
 
   function toggleRsvp(id: string) {
     setRsvpEventIds((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]))
@@ -530,20 +537,22 @@ function LocalEventsSection() {
 function MarketDatesSection({
   defaultHighImpactOnly,
   listMaxHeight,
+  userId,
 }: {
   defaultHighImpactOnly: boolean
   listMaxHeight: number
+  userId?: string
 }) {
   const today = useMemo(() => getToday(), [])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeCat, setActiveCat] = useState<CalendarFilter>('all')
   const [topOnly, setTopOnly] = useState(defaultHighImpactOnly)
   const [query, setQuery] = useState('')
-  const [reminders, setReminders] = useState<string[]>(() => readStoredStringArray(STORAGE_KEYS.reminders))
+  const [reminders, setReminders] = useState<string[]>(() => readStoredStringArray(STORAGE_KEYS.reminders, userId))
 
   useEffect(() => {
-    writeStoredJson(STORAGE_KEYS.reminders, reminders)
-  }, [reminders])
+    writeStoredJson(STORAGE_KEYS.reminders, reminders, userId)
+  }, [reminders, userId])
 
   const visibleEvents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -773,6 +782,7 @@ function MarketFeedEvent({
 }
 
 export function CalendarTab({
+  user,
   hiImpactOnly = false,
   listMaxHeight = 480,
   showLocalEvents = true,
@@ -787,9 +797,9 @@ export function CalendarTab({
         </div>
       </header>
 
-      <MyDatesSection />
-      {showLocalEvents && <LocalEventsSection />}
-      <MarketDatesSection defaultHighImpactOnly={hiImpactOnly} listMaxHeight={listMaxHeight} />
+      <MyDatesSection userId={user?.id} />
+      {showLocalEvents && <LocalEventsSection userId={user?.id} />}
+      <MarketDatesSection userId={user?.id} defaultHighImpactOnly={hiImpactOnly} listMaxHeight={listMaxHeight} />
     </main>
   )
 }

@@ -254,11 +254,11 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
 
   if (loading || profileLoading) {
     return (
-      <main className="auth-page auth-page--loading" aria-live="polite">
-        <div className="brand-mark brand-mark--large" aria-label="MWM">
+      <main className="hs-auth-loading" aria-live="polite">
+        <span className="hs-brand__mark hs-brand__mark--lg" aria-label="MWM">
           M
-        </div>
-        <p>Opening the advisor workspace...</p>
+        </span>
+        <p>Opening the advisor workspace…</p>
       </main>
     )
   }
@@ -266,37 +266,35 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
   if (user && profile) return children(toHubUser(user, profile), handleSignOut)
 
   return (
-    <main className="auth-page">
-      <section className="auth-intro">
-        <a className="brand-lockup brand-lockup--light" href="/" aria-label="MWM admin home">
-          <span className="brand-mark">M</span>
-          <span>
-            <strong>MWM</strong>
-            <small>Admin CRM</small>
-          </span>
+    <main className="hs-auth">
+      <section className="hs-auth__brandside">
+        <a className="hs-brand hs-brand--light" href="/" aria-label="MWM admin home">
+          <span className="hs-brand__mark">M</span>
+          <span className="hs-brand__text">MWM</span>
         </a>
-        <div className="auth-intro__copy">
-          <span className="eyebrow eyebrow--light">ADVISOR ACCESS</span>
+        <div className="hs-auth__pitch">
+          <p className="hs-eyebrow hs-eyebrow--light">Advisor CRM</p>
           <h1>Client work, organized around the next move.</h1>
-          <p>
+          <p className="hs-auth__lede">
             Manage client personalization, pipeline context, and advisor notes
-            from a dedicated workspace.
+            from a single workspace.
           </p>
         </div>
-        <p className="auth-intro__footnote">Private | Advisor-only | MWM</p>
+        <p className="hs-auth__foot">Private · Advisor-only · MWM</p>
       </section>
 
-      <section className="auth-panel">
-        <div className="auth-card">
-          <span className="auth-card__icon"><LockKeyhole size={20} /></span>
-          <p className="eyebrow">ADMIN ACCESS</p>
-          <h2>Welcome to MWM Admin</h2>
-          <p className="auth-card__lede">
-            Enter an advisor or admin email. We will send a secure sign-in link.
+      <section className="hs-auth__panel">
+        <div className="hs-auth__card">
+          <span className="hs-auth__icon">
+            <LockKeyhole size={22} />
+          </span>
+          <h2>Sign in to MWM Admin</h2>
+          <p className="hs-auth__sub">
+            Enter an advisor or admin email and we'll send a secure sign-in link.
           </p>
 
           {!isSupabaseConfigured ? (
-            <div className="setup-note" role="status">
+            <div className="hs-note" role="status">
               <strong>Connect Supabase to enable sign-in</strong>
               <span>
                 Copy <code>.env.example</code> to <code>.env.local</code> and add
@@ -304,41 +302,41 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
               </span>
             </div>
           ) : (
-            <form onSubmit={handleSignIn} className="auth-form">
-              <label htmlFor="email">Email address</label>
-              <div className="input-shell">
-                <Mail size={18} aria-hidden="true" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="advisor@example.com"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  disabled={isSending}
-                  maxLength={254}
-                  required
-                />
-              </div>
+            <form onSubmit={handleSignIn} className="hs-auth__form">
+              <label className="hs-field" htmlFor="email">
+                <span>Email address</span>
+                <div className="hs-input hs-input--icon">
+                  <Mail size={17} aria-hidden="true" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="advisor@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    disabled={isSending}
+                    maxLength={254}
+                    required
+                  />
+                </div>
+              </label>
               <button
-                className="button button--primary button--full"
+                className="hs-btn hs-btn--primary hs-btn--full"
                 type="submit"
                 disabled={isSending}
               >
-                {isSending ? 'Sending secure link...' : 'Send secure link'}
+                {isSending ? 'Sending secure link…' : 'Send secure link'}
                 {!isSending && <ArrowRight size={17} />}
               </button>
               <div aria-live="polite">
                 {message && (
-                  <p className="form-message form-message--success">
-                    <CheckCircle2 size={17} />
+                  <p className="hs-msg hs-msg--ok">
+                    <CheckCircle2 size={16} />
                     {message}
                   </p>
                 )}
-                {error && (
-                  <p className="form-message form-message--error">{error}</p>
-                )}
+                {error && <p className="hs-msg hs-msg--err">{error}</p>}
               </div>
             </form>
           )}

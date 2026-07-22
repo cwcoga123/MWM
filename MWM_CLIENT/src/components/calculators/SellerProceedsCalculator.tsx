@@ -12,6 +12,7 @@ import {
 } from '../../data/caClosingCustoms'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface SellerProceedsCalculatorProps {
   onBack: () => void
@@ -83,13 +84,19 @@ const DEFAULTS = {
 }
 
 export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorProps) {
-  const [salePrice, setSalePrice] = useState(DEFAULTS.salePrice)
-  const [outstandingMortgage, setOutstandingMortgage] = useState(DEFAULTS.outstandingMortgage)
-  const [buyerAgentFee, setBuyerAgentFee] = useState(DEFAULTS.buyerAgentFee)
-  const [sellerAgentFee, setSellerAgentFee] = useState(DEFAULTS.sellerAgentFee)
+  const clientActivity = useClientActivity()
+  const plan = clientActivity?.user.preferences
+  const defaultSalePrice = plan?.targetSalePrice ?? plan?.currentHomeValue ?? DEFAULTS.salePrice
+  const defaultMortgageBalance = plan?.currentMortgageBalance ?? DEFAULTS.outstandingMortgage
+  const defaultAgentFee = defaultSalePrice * ((plan?.sellingCostPercent ?? 7) / 100) / 2
+  const defaultRepairs = plan?.repairsBudget ?? DEFAULTS.repairsPrep
+  const [salePrice, setSalePrice] = useState(defaultSalePrice)
+  const [outstandingMortgage, setOutstandingMortgage] = useState(defaultMortgageBalance)
+  const [buyerAgentFee, setBuyerAgentFee] = useState(defaultAgentFee)
+  const [sellerAgentFee, setSellerAgentFee] = useState(defaultAgentFee)
   const [titleEscrowTax, setTitleEscrowTax] = useState(DEFAULTS.titleEscrowTax)
   const [sellerConcessions, setSellerConcessions] = useState(DEFAULTS.sellerConcessions)
-  const [repairsPrep, setRepairsPrep] = useState(DEFAULTS.repairsPrep)
+  const [repairsPrep, setRepairsPrep] = useState(defaultRepairs)
   const [otherExpenses, setOtherExpenses] = useState(DEFAULTS.otherExpenses)
   const [showAdvanced, setShowAdvanced] = useState(true)
 
@@ -151,13 +158,13 @@ export function SellerProceedsCalculator({ onBack }: SellerProceedsCalculatorPro
   const gradient = conicGradient(result.segments)
 
   function resetCalculator() {
-    setSalePrice(DEFAULTS.salePrice)
-    setOutstandingMortgage(DEFAULTS.outstandingMortgage)
-    setBuyerAgentFee(DEFAULTS.buyerAgentFee)
-    setSellerAgentFee(DEFAULTS.sellerAgentFee)
+    setSalePrice(defaultSalePrice)
+    setOutstandingMortgage(defaultMortgageBalance)
+    setBuyerAgentFee(defaultAgentFee)
+    setSellerAgentFee(defaultAgentFee)
     setTitleEscrowTax(DEFAULTS.titleEscrowTax)
     setSellerConcessions(DEFAULTS.sellerConcessions)
-    setRepairsPrep(DEFAULTS.repairsPrep)
+    setRepairsPrep(defaultRepairs)
     setOtherExpenses(DEFAULTS.otherExpenses)
     setCounty('')
     setCity('')

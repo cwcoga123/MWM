@@ -170,13 +170,14 @@ function currentOverviewProfile(user: HubUser) {
   const demoProfile = user.isDemo
     ? findOverviewDemoAccount(user.overviewProfileId) ?? findOverviewDemoAccount(user.email)
     : null
-  if (demoProfile) return demoProfile
 
   const stateTemplate =
+    demoProfile ??
     overviewDemoAccounts.find((account) => account.clientState === user.clientState) ??
     defaultOverviewDemoAccount
-  const neighborhoods = user.neighborhoods.length
-    ? user.neighborhoods
+  const savedAreas = Array.from(new Set([...user.neighborhoods, ...user.preferences.savedAreas]))
+  const neighborhoods = savedAreas.length
+    ? savedAreas
     : stateTemplate.preferences.neighborhoods
   const targetBudget =
     user.targetBudget ??
@@ -185,12 +186,12 @@ function currentOverviewProfile(user: HubUser) {
     950_000
   const liveProfile: OverviewClientProfile = {
     ...stateTemplate,
-    id: user.id,
+    id: demoProfile?.id ?? user.id,
     email: user.email,
-    name: user.name,
+    name: user.preferences.preferredName.trim() || user.name || stateTemplate.name,
     clientState: user.clientState,
-    advisorNote: user.advisorNote,
-    recentCalculatorIds: user.recentCalculatorIds,
+    advisorNote: user.advisorNote ?? stateTemplate.advisorNote,
+    recentCalculatorIds: user.recentCalculatorIds.length ? user.recentCalculatorIds : stateTemplate.recentCalculatorIds,
     preferences: {
       ...stateTemplate.preferences,
       neighborhoods,
@@ -199,7 +200,8 @@ function currentOverviewProfile(user: HubUser) {
     },
   }
 
-  if (user.clientState === 'house-hunting') {
+  if (user.preferences.homeGoal === 'buying' || user.clientState === 'house-hunting') {
+    const downPayment = user.preferences.downPaymentAmount ?? Math.round(targetBudget * (user.preferences.downPaymentPercent / 100))
     liveProfile.search = {
       matchNeighborhood: neighborhoods[0] ?? 'your saved area',
       newMatches: 2,
@@ -207,11 +209,11 @@ function currentOverviewProfile(user: HubUser) {
       targetBudget,
       targetPaymentInputs: {
         homePrice: targetBudget,
-        downPayment: Math.round(targetBudget * 0.2),
-        amortizationYears: 30,
-        annualPropertyTax: Math.round(targetBudget * 0.0086),
-        annualHomeInsurance: 1300,
-        monthlyHoa: 0,
+        downPayment,
+        amortizationYears: user.preferences.loanTermYears,
+        annualPropertyTax: Math.round(targetBudget * (user.preferences.annualPropertyTaxRate / 100)),
+        annualHomeInsurance: user.preferences.annualHomeInsurance,
+        monthlyHoa: user.preferences.monthlyHoa,
       },
       watchlist: neighborhoods.slice(0, 3).map((area, index) => ({
         name: area,
@@ -236,12 +238,12 @@ function currentOverviewProfile(user: HubUser) {
       budget: targetBudget,
       paymentInputs: {
         homePrice: targetBudget,
-        downPayment: Math.round(targetBudget * 0.2),
+        downPayment: user.preferences.downPaymentAmount ?? Math.round(targetBudget * (user.preferences.downPaymentPercent / 100)),
         annualInterestRate: lockedRate,
-        amortizationYears: 30,
-        annualPropertyTax: Math.round(targetBudget * 0.0086),
-        annualHomeInsurance: 1300,
-        monthlyHoa: 0,
+        amortizationYears: user.preferences.loanTermYears,
+        annualPropertyTax: Math.round(targetBudget * (user.preferences.annualPropertyTaxRate / 100)),
+        annualHomeInsurance: user.preferences.annualHomeInsurance,
+        monthlyHoa: user.preferences.monthlyHoa,
       },
     }
   }
@@ -256,6 +258,24 @@ function currentOverviewProfile(user: HubUser) {
       refiAlertRate: user.refiThreshold ?? stateTemplate.homeowner?.refiAlertRate ?? 6,
       remainingBalance: Math.round(estimatedValue * 0.68),
       equityGainThisYear: Math.round(estimatedValue * 0.04),
+    }
+  }
+
+  if (user.preferences.homeGoal === 'selling') {
+    const estimatedValue = user.preferences.currentHomeValue ?? liveProfile.homeowner?.estimatedValue ?? Math.round(targetBudget * 1.1)
+    const mortgageBalance = user.preferences.currentMortgageBalance ?? liveProfile.homeowner?.remainingBalance ?? Math.round(estimatedValue * 0.68)
+    const targetSalePrice = user.preferences.targetSalePrice ?? estimatedValue
+    const repairsBudget = user.preferences.repairsBudget ?? 0
+    const sellingCosts = targetSalePrice * (user.preferences.sellingCostPercent / 100)
+
+    liveProfile.seller = {
+      address: neighborhoods[0] ?? liveProfile.homeowner?.address ?? 'Your property',
+      estimatedValue,
+      mortgageBalance,
+      targetSalePrice,
+      sellingCostPercent: user.preferences.sellingCostPercent,
+      repairsBudget,
+      estimatedNetProceeds: Math.max(0, targetSalePrice - mortgageBalance - sellingCosts - repairsBudget),
     }
   }
 
@@ -335,9 +355,23 @@ function buildMarketSnapshot(): MarketSnapshot {
   }
 }
 
-function heroCopy(profile: OverviewClientProfile, market: MarketSnapshot) {
+function heroCopy(profile: OverviewClientProfile, market: MarketSnapshot, homeGoal: HubUser['preferences']['homeGoal']) {
   const name = firstName(profile.name)
   const greeting = salutation(profile.clientState)
+
+  if (homeGoal === 'selling' && profile.seller) {
+    return {
+      title: `${greeting}, ${name} - your sale plan is taking shape.`,
+      subline: `A ${formatCompactMoney(profile.seller.targetSalePrice)} target could leave about ${formatCompactMoney(profile.seller.estimatedNetProceeds)} after the mortgage, selling costs, and preparation budget.`,
+    }
+  }
+
+  if (homeGoal === 'buying' && profile.search) {
+    return {
+      title: `${greeting}, ${name} - your buying plan is focused on ${profile.search.matchNeighborhood}.`,
+      subline: `Your ${formatCompactMoney(profile.search.targetBudget)} target and ${userFriendlyDownPayment(profile.search.targetPaymentInputs.downPayment, profile.search.targetPaymentInputs.homePrice)} down-payment plan are ready for a closer look.`,
+    }
+  }
 
   if (profile.clientState === 'in-escrow' && profile.escrow) {
     return {
@@ -366,6 +400,11 @@ function heroCopy(profile: OverviewClientProfile, market: MarketSnapshot) {
   }
 }
 
+function userFriendlyDownPayment(amount: number, homePrice: number) {
+  if (homePrice <= 0) return 'saved'
+  return `${Math.round((amount / homePrice) * 100)}% down`
+}
+
 interface ClientAlert {
   id: string
   title: string
@@ -382,7 +421,7 @@ function buildClientAlerts(
   const lockDate = profile.escrow?.lockExpiresOn ?? user.closingDate
   const targetArea = profile.preferences.neighborhoods[0]
 
-  if (refiThreshold !== null && refiThreshold !== undefined && market.rate.value <= refiThreshold) {
+  if (user.preferences.notifications.rateAlerts && refiThreshold !== null && refiThreshold !== undefined && market.rate.value <= refiThreshold) {
     alerts.push({
       id: 'rate-threshold',
       title: 'Rate dropped below your watch threshold',
@@ -402,7 +441,7 @@ function buildClientAlerts(
     }
   }
 
-  if (targetArea && market.inventory.percent > 0) {
+  if (user.preferences.notifications.marketAlerts && targetArea && market.inventory.percent > 0) {
     alerts.push({
       id: 'inventory-up',
       title: 'Inventory is up in your target area',
@@ -427,6 +466,27 @@ function ClientAlerts({ alerts }: { alerts: ClientAlert[] }) {
           </span>
         </article>
       ))}
+    </section>
+  )
+}
+
+function MyPlanSnapshot({ user }: { user: HubUser }) {
+  const plan = user.preferences
+  const areas = Array.from(new Set([...user.neighborhoods, ...plan.savedAreas]))
+  const targetLabel = user.targetBudget === null ? 'No target set' : `$${Math.round(user.targetBudget).toLocaleString()} target`
+  const paymentLabel = plan.comfortableMonthlyPayment === null
+    ? 'Payment comfort not set'
+    : `$${Math.round(plan.comfortableMonthlyPayment).toLocaleString()}/mo comfort`
+
+  return (
+    <section className="overview-plan-snapshot" aria-label="My plan">
+      <div className="overview-plan-snapshot__heading"><span className="eyebrow">MY PLAN</span><strong>{targetLabel}</strong><small>{paymentLabel} · {plan.loanTermYears}-year {plan.loanType}</small></div>
+      <div className="overview-plan-snapshot__items">
+        <span><small>Goal</small><strong>{{ researching: 'Researching', buying: 'Buying a home', selling: 'Selling a home', refinancing: 'Refinancing', investing: 'Investing' }[plan.homeGoal]}</strong></span>
+        <span><small>Timeline</small><strong>{plan.timeline}</strong></span>
+        <span><small>Areas</small><strong>{areas.slice(0, 2).join(', ') || 'Add areas'}</strong></span>
+      </div>
+      <a href="#settings">Edit My Plan <ArrowRight size={13} /></a>
     </section>
   )
 }
@@ -476,11 +536,100 @@ function PersonalStatCards({
   profile,
   market,
   onOpenCalculator,
+  homeGoal,
 }: {
   profile: OverviewClientProfile
   market: MarketSnapshot
   onOpenCalculator: (calculatorId: string) => void
+  homeGoal: HubUser['preferences']['homeGoal']
 }) {
+  if (homeGoal === 'selling' && profile.seller) {
+    const seller = profile.seller
+    const equity = Math.max(0, seller.estimatedValue - seller.mortgageBalance)
+
+    return (
+      <section className="personal-stat-grid" aria-label="Your selling numbers">
+        <StatCard
+          label="Target sale price"
+          value={formatCompactMoney(seller.targetSalePrice)}
+          pill={`${seller.sellingCostPercent.toFixed(1)}% selling costs`}
+          tone="positive"
+        >
+          Your current planning target for {seller.address}. It can be adjusted for a listing strategy or offer review.
+        </StatCard>
+        <StatCard
+          label="Estimated net proceeds"
+          value={formatCompactMoney(seller.estimatedNetProceeds)}
+          pill={`after ${formatCompactMoney(seller.repairsBudget)} prep`}
+          tone="neutral"
+        >
+          This subtracts the mortgage balance, selling costs, and preparation budget.{' '}
+          <InlineCalculatorLink calculatorId="seller-net-proceeds" onOpen={onOpenCalculator}>
+            See the full breakdown
+          </InlineCalculatorLink>
+        </StatCard>
+        <StatCard
+          label="Estimated equity"
+          value={formatCompactMoney(equity)}
+          pill={`mortgage ${formatCompactMoney(seller.mortgageBalance)}`}
+          tone="time"
+        >
+          Equity is the estimated value minus your remaining mortgage balance.{' '}
+          <InlineCalculatorLink calculatorId="home-equity" onOpen={onOpenCalculator}>
+            Model future value
+          </InlineCalculatorLink>
+        </StatCard>
+      </section>
+    )
+  }
+
+  if (homeGoal === 'buying' && profile.search) {
+    const search = profile.search
+    const paymentInputs = {
+      ...search.targetPaymentInputs,
+      annualInterestRate: market.rate.value,
+    }
+
+    return (
+      <section className="personal-stat-grid" aria-label="Your buying numbers">
+        <StatCard
+          label="Target budget"
+          value={formatCompactMoney(search.targetBudget)}
+          pill={`~ ${formatMonthlyPayment(paymentInputs)}`}
+          tone="positive"
+        >
+          Your target budget is designed around today’s rate, taxes, insurance, and saved down-payment assumptions.
+        </StatCard>
+        <article className="personal-stat-card">
+          <span className="personal-stat-card__label">Your watchlist</span>
+          <div className="personal-watchlist">
+            {search.watchlist.map((area) => (
+              <div className="personal-watchlist__row" key={area.name}>
+                <span>{area.name}</span>
+                <strong>{formatCompactMoney(area.medianPrice)}</strong>
+                <em>{formatSignedPercent(area.monthlyDelta)}</em>
+              </div>
+            ))}
+          </div>
+          <p className="personal-stat-card__caption">
+            Median listing, past month. <a href="#market-scanner">Edit your list</a>
+          </p>
+        </article>
+        <StatCard
+          label="Next buying step"
+          value="Compare"
+          pill={`${userFriendlyDownPayment(search.targetPaymentInputs.downPayment, search.targetPaymentInputs.homePrice)} saved`}
+          tone="time"
+        >
+          Test two payment options before you focus on a listing.{' '}
+          <InlineCalculatorLink calculatorId="loan-comparison" onOpen={onOpenCalculator}>
+            Compare loans
+          </InlineCalculatorLink>
+        </StatCard>
+      </section>
+    )
+  }
+
   if (profile.clientState === 'in-escrow' && profile.escrow) {
     const escrow = profile.escrow
     const rateAdvantage = Math.max(0, market.rate.value - escrow.lockedRate)
@@ -731,7 +880,7 @@ export function OverviewTab({
   const market = buildMarketSnapshot()
   const profile = currentOverviewProfile(user)
   const recents = readRecentCalculatorIds(profile)
-  const hero = heroCopy(profile, market)
+  const hero = heroCopy(profile, market, user.preferences.homeGoal)
   const alerts = buildClientAlerts(user, profile, market)
 
   function openCalculator(calculatorId: string) {
@@ -754,7 +903,7 @@ export function OverviewTab({
             <aside className="advisor-note" aria-label="Note from your advisor">
               <span className="advisor-note__avatar">M</span>
               <div>
-                <span>From your advisor - this morning</span>
+                <span>From your advisor</span>
                 <p>"{profile.advisorNote}"</p>
               </div>
             </aside>
@@ -763,7 +912,8 @@ export function OverviewTab({
       </section>
 
       <ClientAlerts alerts={alerts} />
-      <PersonalStatCards profile={profile} market={market} onOpenCalculator={openCalculator} />
+      <MyPlanSnapshot user={user} />
+      <PersonalStatCards profile={profile} market={market} onOpenCalculator={openCalculator} homeGoal={user.preferences.homeGoal} />
       <MarketDigest market={market} onOpenCostWatch={onOpenCostWatch} />
       <RecentCalculatorPills
         calculatorIds={recents}

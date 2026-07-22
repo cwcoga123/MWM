@@ -4,6 +4,7 @@ import { loanTerms, type LoanTermId } from '../../lib/mortgage'
 import { calculateDownPaymentPlan, downPaymentAmountFor, type AmountMode } from '../../lib/downPaymentPlanner'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface DownPaymentPlannerCalculatorProps {
   onBack: () => void
@@ -105,15 +106,21 @@ function PercentField({
 }
 
 export function DownPaymentPlannerCalculator({ onBack }: DownPaymentPlannerCalculatorProps) {
-  const [homePrice, setHomePrice] = useState(450_000)
-  const [downPayment, setDownPayment] = useState(10)
-  const [downPaymentMode, setDownPaymentMode] = useState<AmountMode>('percent')
+  const clientActivity = useClientActivity()
+  const plan = clientActivity?.user.preferences
+  const defaultHomePrice = clientActivity?.user.targetBudget ?? 450_000
+  const defaultDownPaymentMode: AmountMode = plan?.downPaymentAmount !== null && plan?.downPaymentAmount !== undefined ? 'dollars' : 'percent'
+  const defaultDownPayment = defaultDownPaymentMode === 'dollars' ? plan?.downPaymentAmount ?? 0 : plan?.downPaymentPercent ?? 10
+  const defaultLoanTerm: LoanTermId = plan?.loanTermYears === 15 ? 'fixed-15' : plan?.loanTermYears === 20 ? 'fixed-20' : 'fixed-30'
+  const [homePrice, setHomePrice] = useState(defaultHomePrice)
+  const [downPayment, setDownPayment] = useState(defaultDownPayment)
+  const [downPaymentMode, setDownPaymentMode] = useState<AmountMode>(defaultDownPaymentMode)
   const [interestRate, setInterestRate] = useState(6.49)
-  const [loanTermId, setLoanTermId] = useState<LoanTermId>('fixed-30')
-  const [annualPropertyTax, setAnnualPropertyTax] = useState(5_400)
-  const [annualHomeInsurance, setAnnualHomeInsurance] = useState(1_800)
-  const [monthlyHoa, setMonthlyHoa] = useState(0)
-  const [cashReserves, setCashReserves] = useState(75_000)
+  const [loanTermId, setLoanTermId] = useState<LoanTermId>(defaultLoanTerm)
+  const [annualPropertyTax, setAnnualPropertyTax] = useState(defaultHomePrice * ((plan?.annualPropertyTaxRate ?? 0.86) / 100))
+  const [annualHomeInsurance, setAnnualHomeInsurance] = useState(plan?.annualHomeInsurance ?? 1_800)
+  const [monthlyHoa, setMonthlyHoa] = useState(plan?.monthlyHoa ?? 0)
+  const [cashReserves, setCashReserves] = useState(plan?.cashReserve ?? 75_000)
   const [closingCostRate, setClosingCostRate] = useState(3)
   const [showAdvanced, setShowAdvanced] = useState(true)
   const [downPaymentFocused, setDownPaymentFocused] = useState(false)

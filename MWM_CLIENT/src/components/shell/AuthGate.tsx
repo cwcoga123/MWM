@@ -13,6 +13,11 @@ import {
   findOverviewDemoAccount,
 } from '../../data/overviewPersonalization'
 import {
+  defaultMyPlanPreferences,
+  normalizeMyPlanPreferences,
+  type MyPlanPreferences,
+} from '../../data/preferences'
+import {
   isSupabaseConfigured,
   supabase,
   supabaseConfigurationError,
@@ -33,6 +38,7 @@ export interface HubUser {
   refiThreshold: number | null
   recentCalculatorIds: string[]
   savedScenarios: SavedScenario[]
+  preferences: MyPlanPreferences
   overviewProfileId?: string
 }
 
@@ -62,6 +68,7 @@ function toHubUser(user: User, profile: AccountProfile): HubUser {
     refiThreshold: profile.refi_threshold,
     recentCalculatorIds: profile.recent_calculator_ids,
     savedScenarios: profile.saved_scenarios,
+    preferences: normalizeMyPlanPreferences(profile.user_preferences),
   }
 }
 
@@ -104,6 +111,18 @@ function readStoredArray<T>(key: string, fallback: T[]) {
 
     const parsed = JSON.parse(stored)
     return Array.isArray(parsed) ? (parsed as T[]) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function readStoredObject<T>(key: string, fallback: T) {
+  try {
+    const stored = window.localStorage.getItem(key)
+    if (!stored) return fallback
+
+    const parsed = JSON.parse(stored)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as T) : fallback
   } catch {
     return fallback
   }
@@ -254,6 +273,9 @@ export function AuthGate({ children }: AuthGateProps) {
       `mwm.savedScenarios.${demoAccount.id}`,
       [],
     )
+    const demoPreferences = normalizeMyPlanPreferences(
+      readStoredObject(`mwm.preferences.${demoAccount.id}`, defaultMyPlanPreferences),
+    )
 
     return children(
       {
@@ -271,6 +293,7 @@ export function AuthGate({ children }: AuthGateProps) {
         refiThreshold: demoAccount.homeowner?.refiAlertRate ?? null,
         recentCalculatorIds: demoRecentCalculatorIds,
         savedScenarios: demoSavedScenarios,
+        preferences: demoPreferences,
         overviewProfileId: demoAccount.id,
       },
       async () => undefined,

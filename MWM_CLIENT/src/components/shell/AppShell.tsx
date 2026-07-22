@@ -16,8 +16,10 @@ import { ResourcesTab } from '../tabs/ResourcesTab'
 import { AboutTab } from '../tabs/AboutTab'
 import { MarketScannerTab } from '../tabs/MarketScannerTab'
 import { CostWatchTab } from '../tabs/CostWatchTab'
+import { SettingsTab } from '../tabs/SettingsTab'
 import { AdvisorContactCard } from '../shared/AdvisorContactCard'
 import { ClientActivityProvider } from '../shared/ClientActivityProvider'
+import { NotificationsPanel } from './NotificationsPanel'
 
 interface AppShellProps {
   user: HubUser
@@ -32,6 +34,7 @@ type ActiveView =
   | 'about'
   | 'market-scanner'
   | 'cost-watch'
+  | 'settings'
 
 /**
  * The Overview tab is the default landing view. '#calendar' routes to the
@@ -50,13 +53,17 @@ function viewFromHash(): ActiveView {
   if (hash === 'resources') return 'resources'
   if (hash === 'about') return 'about'
   if (hash === 'market-scanner') return 'market-scanner'
+  if (hash === 'settings') return 'settings'
   return 'calculators'
 }
 
 export function AppShell({ user, onSignOut }: AppShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [activeView, setActiveView] = useState<ActiveView>(viewFromHash)
+  const [notificationOpen, setNotificationOpen] = useState(false)
+  const [activeView, setActiveView] = useState<ActiveView>(() =>
+    window.location.hash ? viewFromHash() : user.preferences.defaultView,
+  )
   const [advisorCardOpen, setAdvisorCardOpen] = useState(false)
   const [hubUserEdits, setHubUserEdits] = useState<{
     userId: string
@@ -71,14 +78,15 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
   )
   const initials = useMemo(
     () =>
-      hubUser.name
+      (hubUser.preferences.preferredName || hubUser.name)
         .split(' ')
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join(''),
-    [hubUser.name],
+    [hubUser.name, hubUser.preferences.preferredName],
   )
+  const displayName = hubUser.preferences.preferredName || hubUser.name
   const roleLabel = hubUser.role[0].toUpperCase() + hubUser.role.slice(1)
 
   useEffect(() => {
@@ -132,6 +140,14 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
     setMobileNavOpen(false)
   }
 
+  function openSettings() {
+    window.location.hash = 'settings'
+    setActiveView('settings')
+    setMobileNavOpen(false)
+    setProfileOpen(false)
+    setNotificationOpen(false)
+  }
+
   function openCalculatorFromOverview(calculatorId: string) {
     window.location.hash = calculatorId
     setActiveView('calculators')
@@ -150,7 +166,12 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
         }))
       }
     >
-      <div className="app-shell">
+      <div
+        className="app-shell"
+        data-theme={hubUser.preferences.appearance.theme}
+        data-density={hubUser.preferences.appearance.density}
+        data-reduce-motion={hubUser.preferences.appearance.reduceMotion ? 'true' : 'false'}
+      >
       <aside className={`sidebar ${mobileNavOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar__top">
           <a className="brand-lockup" href="/" aria-label="MWM home">
@@ -252,7 +273,15 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
         <div className="sidebar__spacer" />
 
         <div className="sidebar__account">
-          <button className="notification-button" aria-label="Notifications">
+          <button
+            className={`notification-button${notificationOpen ? ' is-active' : ''}`}
+            aria-label="Notifications"
+            aria-expanded={notificationOpen}
+            onClick={() => {
+              setNotificationOpen((open) => !open)
+              setProfileOpen(false)
+            }}
+          >
             <Bell size={17} />
             <span>Notifications</span>
             <span className="notification-button__dot" aria-hidden="true" />
@@ -266,7 +295,7 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             >
               <span className="avatar">{initials || 'M'}</span>
               <span className="profile-button__copy">
-                <strong>{hubUser.name}</strong>
+                <strong>{displayName}</strong>
                 <small>{roleLabel}</small>
               </span>
               <ChevronDown size={16} />
@@ -277,7 +306,14 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
                 <a role="menuitem" href="#help" onClick={() => setProfileOpen(false)}>
                   <CircleHelp size={16} /> Help & support
                 </a>
-                <a role="menuitem" href="#settings" onClick={() => setProfileOpen(false)}>
+                <a
+                  role="menuitem"
+                  href="#settings"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    openSettings()
+                  }}
+                >
                   <Settings size={16} /> Settings
                 </a>
                 <button role="menuitem" onClick={() => void onSignOut()}>
@@ -315,13 +351,21 @@ export function AppShell({ user, onSignOut }: AppShellProps) {
             onOpenAdvisorCard={() => setAdvisorCardOpen(true)}
           />
         )}
-        {activeView === 'calendar' && <CalendarTab />}
+        {activeView === 'calendar' && <CalendarTab user={hubUser} />}
         {activeView === 'calculators' && <CalculatorIndex user={hubUser} />}
         {activeView === 'resources' && <ResourcesTab user={hubUser} />}
         {activeView === 'about' && <AboutTab />}
         {activeView === 'market-scanner' && <MarketScannerTab />}
         {activeView === 'cost-watch' && <CostWatchTab user={hubUser} />}
+        {activeView === 'settings' && <SettingsTab user={hubUser} />}
       </div>
+
+      <NotificationsPanel
+        user={hubUser}
+        open={notificationOpen}
+        onClose={() => setNotificationOpen(false)}
+        onOpenSettings={openSettings}
+      />
 
       <AdvisorContactCard open={advisorCardOpen} onOpenChange={setAdvisorCardOpen} />
       </div>

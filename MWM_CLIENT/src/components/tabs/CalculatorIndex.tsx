@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   ArrowRight,
   BellRing,
@@ -28,6 +28,9 @@ import { PreapprovalChecklistTool } from '../calculators/PreapprovalChecklistToo
 import { RefiWatchTool } from '../calculators/RefiWatchTool'
 import type { HubUser } from '../shell/AuthGate'
 import { useClientActivity } from '../shared/clientActivityContext'
+import { CalculatorFollowUp, CalculatorPlanBanner } from '../shared/CalculatorPlanBanner'
+import { CalculatorDraftBoundary } from '../shared/CalculatorDraftBoundary'
+import { writeCalculatorDraft } from '../../lib/calculatorDrafts'
 
 interface CalculatorIndexProps {
   user: HubUser
@@ -142,8 +145,9 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
     }
   }, [activeCalculator, clientActivity])
 
-  function openCalculator(calculatorId: string) {
+  function openCalculator(calculatorId: string, inputDraft?: Record<string, string>) {
     if ((OPENABLE_CALCULATORS as string[]).includes(calculatorId)) {
+      if (inputDraft) writeCalculatorDraft(user.id, calculatorId, inputDraft)
       setActiveCalculator(calculatorId as ActiveCalculator)
     }
   }
@@ -160,64 +164,39 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
     }))
   }
 
-  if (activeCalculator === 'mortgage-calculator') {
-    return <MortgageCalculator onBack={closeCalculator} />
-  }
+  if (activeCalculator) {
+    let calculatorContent: ReactNode = null
+    if (activeCalculator === 'mortgage-calculator') calculatorContent = <MortgageCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'cash-out-refinance') calculatorContent = <CashOutRefinanceCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'amortization-schedule') calculatorContent = <AmortizationCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'loan-comparison') calculatorContent = <LoanComparisonCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'affordability') calculatorContent = <AffordabilityCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'mortgage-rates') calculatorContent = <MortgageRatesCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'rent-vs-buy') calculatorContent = <RentVsBuyCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'seller-net-proceeds') calculatorContent = <SellerProceedsCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'buyer-closing-costs') calculatorContent = <BuyerClosingCostsCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'down-payment') calculatorContent = <DownPaymentPlannerCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'home-equity') calculatorContent = <HomeEquityCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'investment-property') calculatorContent = <InvestmentPropertyCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'refinance-break-even') calculatorContent = <RefinanceBreakEvenCalculator onBack={closeCalculator} />
+    if (activeCalculator === 'preapproval') calculatorContent = <PreapprovalChecklistTool user={user} onBack={closeCalculator} />
+    if (activeCalculator === 'refi-watch') calculatorContent = <RefiWatchTool onBack={closeCalculator} />
 
-  if (activeCalculator === 'cash-out-refinance') {
-    return <CashOutRefinanceCalculator onBack={closeCalculator} />
-  }
+    const calculatorTitle = activeCalculator === 'preapproval'
+      ? 'Pre-approval readiness'
+      : activeCalculator === 'refi-watch'
+        ? 'Refi Watch'
+        : calculators.find((calculator) => calculator.id === activeCalculator)?.title ?? 'Calculator'
 
-  if (activeCalculator === 'amortization-schedule') {
-    return <AmortizationCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'loan-comparison') {
-    return <LoanComparisonCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'affordability') {
-    return <AffordabilityCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'mortgage-rates') {
-    return <MortgageRatesCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'rent-vs-buy') {
-    return <RentVsBuyCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'seller-net-proceeds') {
-    return <SellerProceedsCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'buyer-closing-costs') {
-    return <BuyerClosingCostsCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'down-payment') {
-    return <DownPaymentPlannerCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'home-equity') {
-    return <HomeEquityCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'investment-property') {
-    return <InvestmentPropertyCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'refinance-break-even') {
-    return <RefinanceBreakEvenCalculator onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'preapproval') {
-    return <PreapprovalChecklistTool user={user} onBack={closeCalculator} />
-  }
-
-  if (activeCalculator === 'refi-watch') {
-    return <RefiWatchTool onBack={closeCalculator} />
+    return (
+      <div className="calculator-workspace-shell">
+        <CalculatorPlanBanner user={user} calculatorTitle={calculatorTitle} />
+        <CalculatorDraftBoundary user={user} calculatorId={activeCalculator}>
+          {calculatorContent}
+        </CalculatorDraftBoundary>
+        <CalculatorFollowUp calculatorId={activeCalculator} />
+      </div>
+    )
   }
 
   const recentCalculators = user.recentCalculatorIds
@@ -372,11 +351,12 @@ export function CalculatorIndex({ user }: CalculatorIndexProps) {
                     <button
                       type="button"
                       className="saved-scenarios-list__open"
-                      onClick={() => openCalculator(scenario.calculatorId)}
+                      onClick={() => openCalculator(scenario.calculatorId, scenario.inputDraft)}
                     >
                       <strong>{scenario.tool}</strong>
                       <span>{scenario.label}</span>
                       {scenario.summary && <small>{scenario.summary}</small>}
+                      <small>Saved {new Date(scenario.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</small>
                     </button>
                     <button
                       type="button"

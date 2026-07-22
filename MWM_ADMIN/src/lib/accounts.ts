@@ -1,4 +1,8 @@
 import { supabase } from './supabase'
+import {
+  normalizeMyPlanPreferences,
+  type MyPlanPreferences,
+} from '../../../MWM_CLIENT/src/data/preferences'
 
 export type AccountRole = 'client' | 'advisor' | 'admin'
 export type AccountStatus = 'active' | 'disabled'
@@ -20,6 +24,7 @@ export interface SavedScenario {
   summary: string
   sections: SavedScenarioSection[]
   savedAt: string
+  inputDraft?: Record<string, string>
 }
 
 export interface AccountProfile {
@@ -36,6 +41,7 @@ export interface AccountProfile {
   closing_date: string | null
   locked_rate: number | null
   refi_threshold: number | null
+  user_preferences: MyPlanPreferences
   recent_calculator_ids: string[]
   saved_scenarios: SavedScenario[]
   created_at: string
@@ -66,6 +72,7 @@ const PROFILE_COLUMNS = [
   'closing_date',
   'locked_rate',
   'refi_threshold',
+  'user_preferences',
   'recent_calculator_ids',
   'saved_scenarios',
   'created_at',
@@ -106,6 +113,14 @@ function asSavedScenarios(value: unknown): SavedScenario[] {
         summary: candidate.summary,
         sections: candidate.sections,
         savedAt: candidate.savedAt,
+        inputDraft:
+          candidate.inputDraft && typeof candidate.inputDraft === 'object'
+            ? Object.fromEntries(
+                Object.entries(candidate.inputDraft).filter(
+                  ([key, value]) => typeof key === 'string' && typeof value === 'string',
+                ),
+              )
+            : undefined,
       },
     ]
   })
@@ -114,6 +129,7 @@ function asSavedScenarios(value: unknown): SavedScenario[] {
 function normalizeProfile(profile: AccountProfile): AccountProfile {
   return {
     ...profile,
+    user_preferences: normalizeMyPlanPreferences(profile.user_preferences),
     neighborhoods: asStringArray(profile.neighborhoods),
     recent_calculator_ids: asStringArray(profile.recent_calculator_ids),
     saved_scenarios: asSavedScenarios(profile.saved_scenarios),

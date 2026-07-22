@@ -19,6 +19,7 @@ import {
 } from '../../lib/buyerClosingCosts'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface BuyerClosingCostsCalculatorProps {
   onBack: () => void
@@ -217,22 +218,28 @@ function ClosingCostSection({
 const DEFAULT_CLOSING_DATE = '2026-07-31'
 
 export function BuyerClosingCostsCalculator({ onBack }: BuyerClosingCostsCalculatorProps) {
-  const [purchasePrice, setPurchasePrice] = useState(1_250_000)
-  const [downPayment, setDownPayment] = useState(250_000)
-  const [downPaymentMode, setDownPaymentMode] = useState<AmountMode>('dollars')
+  const clientActivity = useClientActivity()
+  const plan = clientActivity?.user.preferences
+  const defaultPurchasePrice = clientActivity?.user.targetBudget ?? 1_250_000
+  const defaultDownPaymentMode: AmountMode = plan?.downPaymentAmount !== null && plan?.downPaymentAmount !== undefined ? 'dollars' : 'percent'
+  const defaultDownPayment = defaultDownPaymentMode === 'dollars' ? plan?.downPaymentAmount ?? 250_000 : plan?.downPaymentPercent ?? 20
+  const defaultLoanTerm: LoanTermId = plan?.loanTermYears === 15 ? 'fixed-15' : plan?.loanTermYears === 20 ? 'fixed-20' : 'fixed-30'
+  const [purchasePrice, setPurchasePrice] = useState(defaultPurchasePrice)
+  const [downPayment, setDownPayment] = useState(defaultDownPayment)
+  const [downPaymentMode, setDownPaymentMode] = useState<AmountMode>(defaultDownPaymentMode)
   const [downPaymentFocused, setDownPaymentFocused] = useState(false)
   const [estimatedClosingDate, setEstimatedClosingDate] = useState(DEFAULT_CLOSING_DATE)
   const [firstPaymentDue, setFirstPaymentDue] = useState(defaultFirstPaymentDue(DEFAULT_CLOSING_DATE))
 
   const [interestRate, setInterestRate] = useState(6.49)
-  const [loanTermId, setLoanTermId] = useState<LoanTermId>('fixed-30')
+  const [loanTermId, setLoanTermId] = useState<LoanTermId>(defaultLoanTerm)
   const [mortgageInsurancePMI, setMortgageInsurancePMI] = useState(0)
   const [prepaidInterestOverride, setPrepaidInterestOverride] = useState<number | null>(null)
   const [principalAndInterest, setPrincipalAndInterest] = useState(0)
-  const [annualHomeownersInsurance, setAnnualHomeownersInsurance] = useState(1_839)
+  const [annualHomeownersInsurance, setAnnualHomeownersInsurance] = useState(plan?.annualHomeInsurance ?? 1_839)
   const [annualAdditionalInsurance, setAnnualAdditionalInsurance] = useState(795)
-  const [annualPropertyTax, setAnnualPropertyTax] = useState(1_200)
-  const [monthlyAssociationDues, setMonthlyAssociationDues] = useState(0)
+  const [annualPropertyTax, setAnnualPropertyTax] = useState(defaultPurchasePrice * ((plan?.annualPropertyTaxRate ?? 0.86) / 100))
+  const [monthlyAssociationDues, setMonthlyAssociationDues] = useState(plan?.monthlyHoa ?? 0)
   const [monthsOfEscrow, setMonthsOfEscrow] = useState(3)
 
   const [closingCostsPaidBySeller, setClosingCostsPaidBySeller] = useState(0)

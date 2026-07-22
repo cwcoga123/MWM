@@ -30,8 +30,13 @@ import {
 } from '../../lib/homeCostWatch'
 import { formatFredDate, formatSnapshotTimestamp } from '../../lib/formatFredValue'
 import type { HubUser } from '../shell/AuthGate'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 const PIN_STORAGE_KEY = 'mwm.costwatch.pins'
+
+function pinStorageKey(userId?: string) {
+  return userId ? `${PIN_STORAGE_KEY}.${userId}` : PIN_STORAGE_KEY
+}
 const SUMMARY_INDICATOR_IDS = [
   'mortgage-30',
   'sf-case-shiller',
@@ -65,7 +70,7 @@ const RATE_INTEREST_INDICATORS = ['mortgage-30', 'mortgage-15', 'treasury-10y']
 function savedAreaIndicatorIds(user?: HubUser) {
   if (!user) return []
 
-  const savedNeighborhoods = user.neighborhoods.map((area) => area.toLowerCase())
+  const savedNeighborhoods = [...user.neighborhoods, ...user.preferences.savedAreas].map((area) => area.toLowerCase())
   const hasSanJoseInterest = savedNeighborhoods.some((area) =>
     ['san jose', 'cupertino', 'sunnyvale', 'santa clara', 'los gatos', 'campbell'].some((match) =>
       area.includes(match),
@@ -101,9 +106,9 @@ function readInitialDetailId() {
   return detailId && getHomeCostRecord(detailId) ? detailId : null
 }
 
-function readPins() {
+function readPins(userId?: string) {
   try {
-    const stored = window.localStorage.getItem(PIN_STORAGE_KEY)
+    const stored = window.localStorage.getItem(pinStorageKey(userId))
     if (!stored) return DEFAULT_HOME_COST_PINS
     const parsed = JSON.parse(stored)
 
@@ -634,24 +639,28 @@ export function CostWatchOverviewStrip({ onOpenCostWatch }: { onOpenCostWatch: (
 }
 
 export function CostWatchTab({ user }: { user?: HubUser }) {
+  const clientActivity = useClientActivity()
   const initialSavedIndicatorIds = savedAreaIndicatorIds(user)
-  const [range, setRange] = useState<HomeCostRange>('20Y')
+  const [range, setRange] = useState<HomeCostRange>(() => user?.preferences.marketRange ?? '20Y')
   const [geo, setGeo] = useState<HomeCostGeoFilter>('all')
   const [selectedGroup, setSelectedGroup] = useState('all')
   const [query, setQuery] = useState('')
   const [savedOnly, setSavedOnly] = useState(initialSavedIndicatorIds.length > 0)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [detailId, setDetailId] = useState<string | null>(readInitialDetailId)
-  const [pins, setPins] = useState<string[]>(readPins)
+  const [pins, setPins] = useState<string[]>(() => user?.preferences.savedCostWatchIds.length ? user.preferences.savedCostWatchIds : readPins(user?.id))
   const normalizedQuery = query.trim().toLowerCase()
   const savedIndicatorIds = useMemo(() => savedAreaIndicatorIds(user), [user])
   const savedIndicatorIdSet = useMemo(() => new Set(savedIndicatorIds), [savedIndicatorIds])
   const savedOnlyActive = savedOnly && savedIndicatorIds.length > 0
-  const savedAreasLabel = user?.neighborhoods.slice(0, 3).join(', ') || 'Rate watch'
+  const savedAreasLabel = [...(user?.neighborhoods ?? []), ...(user?.preferences.savedAreas ?? [])].slice(0, 3).join(', ') || 'Rate watch'
 
   useEffect(() => {
-    window.localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pins))
-  }, [pins])
+    window.localStorage.setItem(pinStorageKey(user?.id), JSON.stringify(pins))
+    if (user && clientActivity && pins.join('|') !== user.preferences.savedCostWatchIds.join('|')) {
+      void clientActivity.updatePreferences({ savedCostWatchIds: pins })
+    }
+  }, [clientActivity, pins, user])
 
   useEffect(() => {
     function syncDetailFromHash() {

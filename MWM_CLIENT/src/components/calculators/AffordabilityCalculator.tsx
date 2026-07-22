@@ -15,6 +15,7 @@ import {
 } from '../../lib/affordability'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 interface AffordabilityCalculatorProps {
   onBack: () => void
@@ -119,12 +120,17 @@ const ZONE_LABEL: Record<ReturnType<typeof affordabilityZone>, string> = {
 }
 
 export function AffordabilityCalculator({ onBack }: AffordabilityCalculatorProps) {
-  const [grossAnnualIncome, setGrossAnnualIncome] = useState(90_000)
-  const [monthlyDebt, setMonthlyDebt] = useState(600)
-  const [downPayment, setDownPayment] = useState(15_000)
-  const [propertyTaxRate, setPropertyTaxRate] = useState(0.74)
+  const clientActivity = useClientActivity()
+  const plan = clientActivity?.user.preferences
+  const targetBudget = clientActivity?.user.targetBudget ?? 950_000
+  const defaultDownPayment = plan?.downPaymentAmount ?? targetBudget * ((plan?.downPaymentPercent ?? 20) / 100)
+  const defaultLoanTerm: LoanTermId = plan?.loanTermYears === 15 ? 'fixed-15' : plan?.loanTermYears === 20 ? 'fixed-20' : 'fixed-30'
+  const [grossAnnualIncome, setGrossAnnualIncome] = useState(plan?.grossAnnualIncome ?? 90_000)
+  const [monthlyDebt, setMonthlyDebt] = useState(plan?.monthlyDebt ?? 600)
+  const [downPayment, setDownPayment] = useState(defaultDownPayment)
+  const [propertyTaxRate, setPropertyTaxRate] = useState(plan?.annualPropertyTaxRate ?? 0.74)
   const [creditScoreId, setCreditScoreId] = useState<CreditScoreId>('excellent')
-  const [loanTermId, setLoanTermId] = useState<LoanTermId>('fixed-30')
+  const [loanTermId, setLoanTermId] = useState<LoanTermId>(defaultLoanTerm)
   const [useCustomRate, setUseCustomRate] = useState(false)
   const [customRate, setCustomRate] = useState(6.49)
   const [removeMortgageInsurance, setRemoveMortgageInsurance] = useState(false)

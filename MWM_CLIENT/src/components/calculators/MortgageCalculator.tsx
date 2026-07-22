@@ -12,6 +12,7 @@ import {
 } from '../../lib/mortgage'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 type DownPaymentMode = 'dollars' | 'percent'
 
@@ -93,16 +94,21 @@ function MoneyField({ id, label, value, onChange, suffix, help }: MoneyFieldProp
 }
 
 export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
-  const [homePrice, setHomePrice] = useState(1_250_000)
-  const [downPayment, setDownPayment] = useState(250_000)
+  const clientActivity = useClientActivity()
+  const plan = clientActivity?.user.preferences
+  const defaultHomePrice = clientActivity?.user.targetBudget ?? 1_250_000
+  const defaultDownPayment = plan?.downPaymentAmount ?? defaultHomePrice * ((plan?.downPaymentPercent ?? 20) / 100)
+  const defaultTerm: LoanTermId = plan?.loanTermYears === 15 ? 'fixed-15' : plan?.loanTermYears === 20 ? 'fixed-20' : 'fixed-30'
+  const [homePrice, setHomePrice] = useState(defaultHomePrice)
+  const [downPayment, setDownPayment] = useState(defaultDownPayment)
   const [downPaymentMode, setDownPaymentMode] =
     useState<DownPaymentMode>('dollars')
-  const [loanTermId, setLoanTermId] = useState<LoanTermId>('fixed-30')
+  const [loanTermId, setLoanTermId] = useState<LoanTermId>(defaultTerm)
   const [creditScoreId, setCreditScoreId] =
     useState<CreditScoreId>('excellent')
-  const [monthlyHoa, setMonthlyHoa] = useState(0)
-  const [annualInsurance, setAnnualInsurance] = useState(0)
-  const [annualPropertyTax, setAnnualPropertyTax] = useState(1_200)
+  const [monthlyHoa, setMonthlyHoa] = useState(plan?.monthlyHoa ?? 0)
+  const [annualInsurance, setAnnualInsurance] = useState(plan?.annualHomeInsurance ?? 1_200)
+  const [annualPropertyTax, setAnnualPropertyTax] = useState(defaultHomePrice * ((plan?.annualPropertyTaxRate ?? 0.86) / 100))
   const [downPaymentFocused, setDownPaymentFocused] = useState(false)
   const [removePmi, setRemovePmi] = useState(false)
 
@@ -191,14 +197,14 @@ export function MortgageCalculator({ onBack }: MortgageCalculatorProps) {
   }
 
   function resetCalculator() {
-    setHomePrice(1_250_000)
-    setDownPayment(250_000)
+    setHomePrice(defaultHomePrice)
+    setDownPayment(defaultDownPayment)
     setDownPaymentMode('dollars')
-    setLoanTermId('fixed-30')
+    setLoanTermId(defaultTerm)
     setCreditScoreId('excellent')
-    setMonthlyHoa(0)
-    setAnnualInsurance(0)
-    setAnnualPropertyTax(1_200)
+    setMonthlyHoa(plan?.monthlyHoa ?? 0)
+    setAnnualInsurance(plan?.annualHomeInsurance ?? 1_200)
+    setAnnualPropertyTax(defaultHomePrice * ((plan?.annualPropertyTaxRate ?? 0.86) / 100))
     setRemovePmi(false)
   }
 

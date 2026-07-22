@@ -1,4 +1,9 @@
 import { supabase } from './supabase'
+import {
+  defaultMyPlanPreferences,
+  normalizeMyPlanPreferences,
+  type MyPlanPreferences,
+} from '../data/preferences'
 
 export type AccountRole = 'client' | 'advisor' | 'admin'
 export type AccountStatus = 'active' | 'disabled'
@@ -19,6 +24,7 @@ export interface SavedScenario {
   label: string
   summary: string
   sections: SavedScenarioSection[]
+  inputDraft?: Record<string, string>
   savedAt: string
 }
 
@@ -38,6 +44,7 @@ export interface AccountProfile {
   refi_threshold: number | null
   recent_calculator_ids: string[]
   saved_scenarios: SavedScenario[]
+  user_preferences: MyPlanPreferences
   created_at: string
   updated_at: string
 }
@@ -68,6 +75,7 @@ const PROFILE_COLUMNS = [
   'refi_threshold',
   'recent_calculator_ids',
   'saved_scenarios',
+  'user_preferences',
   'created_at',
   'updated_at',
 ].join(', ')
@@ -105,6 +113,12 @@ function asSavedScenarios(value: unknown): SavedScenario[] {
         label: candidate.label,
         summary: candidate.summary,
         sections: candidate.sections,
+        inputDraft:
+          candidate.inputDraft && typeof candidate.inputDraft === 'object' && !Array.isArray(candidate.inputDraft)
+            ? Object.fromEntries(
+                Object.entries(candidate.inputDraft).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+              )
+            : undefined,
         savedAt: candidate.savedAt,
       },
     ]
@@ -117,6 +131,7 @@ function normalizeProfile(profile: AccountProfile): AccountProfile {
     neighborhoods: asStringArray(profile.neighborhoods),
     recent_calculator_ids: asStringArray(profile.recent_calculator_ids),
     saved_scenarios: asSavedScenarios(profile.saved_scenarios),
+    user_preferences: normalizeMyPlanPreferences(profile.user_preferences ?? defaultMyPlanPreferences),
   }
 }
 
@@ -188,6 +203,17 @@ export async function updateSavedScenarios(userId: string, savedScenarios: Saved
   const { error } = await supabase
     .from('profiles')
     .update({ saved_scenarios: savedScenarios })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+export async function updateUserPreferences(userId: string, preferences: MyPlanPreferences) {
+  if (!supabase) throw new Error('Supabase is not configured.')
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ user_preferences: preferences })
     .eq('id', userId)
 
   if (error) throw error

@@ -12,6 +12,7 @@ import { calculateProductRate, formatRate, rateProducts } from '../../lib/mortga
 import { calculateRefinanceBreakEven } from '../../lib/refinanceBreakEven'
 import { ShareWithAdvisor } from '../shared/ShareWithAdvisor'
 import type { ShareSection } from '../../lib/share'
+import { useClientActivity } from '../shared/clientActivityContext'
 
 type RefiWatchProfile = {
   currentLoanBalance: number
@@ -50,9 +51,9 @@ function safeNumber(value: number, fallback = 0) {
   return Number.isFinite(value) ? Math.max(0, value) : fallback
 }
 
-function readStoredRefiWatchProfile(): RefiWatchProfile {
+function readStoredRefiWatchProfile(userId?: string): RefiWatchProfile {
   try {
-    const storedProfile = window.localStorage.getItem(REFI_WATCH_STORAGE_KEY)
+    const storedProfile = window.localStorage.getItem(userId ? `${REFI_WATCH_STORAGE_KEY}.${userId}` : REFI_WATCH_STORAGE_KEY)
     if (!storedProfile) return defaultRefiWatchProfile
 
     const parsed = JSON.parse(storedProfile) as Partial<RefiWatchProfile>
@@ -123,7 +124,15 @@ function calculateWatchTargetRate(profile: RefiWatchProfile) {
  * blended into the regular calculator categories.
  */
 export function RefiWatchTool({ onBack }: RefiWatchToolProps) {
-  const [refiWatchProfile, setRefiWatchProfile] = useState<RefiWatchProfile>(readStoredRefiWatchProfile)
+  const clientActivity = useClientActivity()
+  const hubUser = clientActivity?.user
+  const [refiWatchProfile, setRefiWatchProfile] = useState<RefiWatchProfile>(() => {
+    const stored = readStoredRefiWatchProfile(hubUser?.id)
+    return {
+      ...stored,
+      currentInterestRate: hubUser?.lockedRate ?? stored.currentInterestRate,
+    }
+  })
 
   const refiWatchTargetRate = useMemo(() => calculateWatchTargetRate(refiWatchProfile), [refiWatchProfile])
   const refiWatchProducts = useMemo(
@@ -169,11 +178,11 @@ export function RefiWatchTool({ onBack }: RefiWatchToolProps) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(REFI_WATCH_STORAGE_KEY, JSON.stringify(refiWatchProfile))
+      window.localStorage.setItem(hubUser?.id ? `${REFI_WATCH_STORAGE_KEY}.${hubUser.id}` : REFI_WATCH_STORAGE_KEY, JSON.stringify(refiWatchProfile))
     } catch {
       // Local persistence is a convenience only; calculations continue without it.
     }
-  }, [refiWatchProfile])
+  }, [hubUser?.id, refiWatchProfile])
 
   function updateRefiWatchProfile(patch: Partial<RefiWatchProfile>) {
     setRefiWatchProfile((current) => ({
